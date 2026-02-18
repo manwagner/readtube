@@ -275,7 +275,10 @@ async def article_send_kindle(request: Request, video_id: str) -> Response:
         part.add_header("Content-Disposition", f'attachment; filename="{filename}"')
         msg.attach(part)
 
-        smtp_port = int(settings.get("smtp_port", "587"))
+        try:
+            smtp_port = int(settings.get("smtp_port", "587"))
+        except (ValueError, TypeError):
+            smtp_port = 587
         smtp_user = settings.get("smtp_user", "").strip()
         smtp_pass = settings.get("smtp_pass", "").strip()
 
@@ -287,7 +290,8 @@ async def article_send_kindle(request: Request, video_id: str) -> Response:
 
         return HTMLResponse('<span class="text-success">Sent to Kindle!</span>')
     except Exception as exc:
-        return HTMLResponse(f'<span class="text-error">Send failed: {str(exc)[:100]}</span>')
+        from html import escape
+        return HTMLResponse(f'<span class="text-error">Send failed: {escape(str(exc)[:100])}</span>')
 
 
 @app.post("/article/{video_id}/delete", response_class=HTMLResponse)
@@ -329,11 +333,11 @@ async def sources_add(request: Request, url: str = Form(...), name: str = Form("
 
 @app.post("/sources/import-opml", response_class=HTMLResponse)
 async def sources_import_opml(request: Request, file: UploadFile = File(...)) -> Response:
-    import xml.etree.ElementTree as ET
+    from defusedxml.ElementTree import fromstring as safe_fromstring
 
     try:
         content = await file.read()
-        root = ET.fromstring(content)
+        root = safe_fromstring(content)
     except Exception:
         return HTMLResponse('<div class="alert alert-error">Invalid OPML file</div>')
 
@@ -401,10 +405,14 @@ async def settings_page(request: Request) -> Response:
 @app.post("/settings", response_class=HTMLResponse)
 async def settings_save(request: Request) -> Response:
     form = await request.form()
+    # Secret fields: only update if user provided a new value (non-empty)
+    secret_keys = {"anthropic_api_key", "openai_api_key", "smtp_pass"}
     for key in ("llm_backend", "ollama_model", "theme", "anthropic_api_key", "openai_api_key",
                  "kindle_email", "smtp_host", "smtp_port", "smtp_user", "smtp_pass", "smtp_from"):
         val = form.get(key)
         if val is not None:
+            if key in secret_keys and not str(val).strip():
+                continue  # don't overwrite existing secret with empty string
             db.setting_set(key, str(val))
     # auto_fetch_interval: form sends minutes, store as seconds
     afi = form.get("auto_fetch_interval")

@@ -64,12 +64,6 @@ def _list_transcripts(video_id: str):
     except Exception:
         pass
     if hasattr(YouTubeTranscriptApi, "list_transcripts"):
-        try:
-            return YouTubeTranscriptApi.list_transcripts(video_id)
-        except Exception:
-            pass
-    # Final fallback to classmethod if present
-    if hasattr(YouTubeTranscriptApi, "list_transcripts"):
         return YouTubeTranscriptApi.list_transcripts(video_id)
     raise RuntimeError("YouTubeTranscriptApi does not support transcript listing on this version")
 

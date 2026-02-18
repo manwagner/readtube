@@ -55,6 +55,7 @@ class SQLiteCache:
         self.config = config or CacheConfig()
         self._local = threading.local()
         self._delete_count = 0
+        self._delete_lock = threading.Lock()
         self._init_db()
 
     @property
@@ -167,7 +168,8 @@ class SQLiteCache:
             if row['expires_at'] < now:
                 # Expired, delete and return default
                 cursor.execute("DELETE FROM cache WHERE key = ?", (full_key,))
-                self._delete_count += 1
+                with self._delete_lock:
+                    self._delete_count += 1
                 return default
 
             return self._deserialize(row['value'], bool(row['compressed']))
@@ -221,8 +223,12 @@ class SQLiteCache:
             deleted = cursor.rowcount > 0
 
         if deleted:
-            self._delete_count += 1
-            if self._delete_count >= self.config.vacuum_threshold:
+            should_vacuum = False
+            with self._delete_lock:
+                self._delete_count += 1
+                if self._delete_count >= self.config.vacuum_threshold:
+                    should_vacuum = True
+            if should_vacuum:
                 self.vacuum()
 
         return deleted

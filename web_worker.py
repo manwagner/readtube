@@ -133,8 +133,8 @@ def _dispatch(job: Dict[str, Any]) -> None:
                 row = cur.fetchone()
                 if row:
                     db.article_update(row["video_id"], status="error", error=str(exc)[:1000])
-            except Exception:
-                pass
+            except Exception as inner_exc:
+                logger.error("Failed to mark article as errored: %s", inner_exc)
 
 
 # ── Video pipeline ────────────────────────────────────────
@@ -264,8 +264,18 @@ def _do_fetch_video(job: Dict[str, Any]) -> None:
         db.job_update(job["id"], status="error", error="LLM returned empty article")
         return
 
-    # ── Step 4: render markdown → HTML ──
-    article_html = markdown.markdown(article_md, extensions=["smarty"])
+    # ── Step 4: render markdown → HTML (sanitized) ──
+    import bleach
+    raw_html = markdown.markdown(article_md, extensions=["smarty"])
+    article_html = bleach.clean(
+        raw_html,
+        tags=["h1", "h2", "h3", "h4", "h5", "h6", "p", "a", "em", "strong",
+              "ul", "ol", "li", "blockquote", "code", "pre", "br", "hr",
+              "img", "figure", "figcaption", "table", "thead", "tbody",
+              "tr", "th", "td", "sup", "sub", "span", "div"],
+        attributes={"a": ["href", "title"], "img": ["src", "alt", "title"]},
+        protocols=["http", "https", "mailto"],
+    )
 
     db.article_update(video_id, status="done", article_md=article_md, article_html=article_html, error=None)
     db.job_update(job["id"], status="done")

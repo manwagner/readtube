@@ -167,7 +167,7 @@ def split_transcript_by_chapters(
 
             # Calculate proportional word count for this chapter
             duration = end - start
-            proportion = duration / total_duration if total_duration > 0 else 1.0 / len(sorted_chapters)
+            proportion = duration / total_duration if total_duration > 0 else (1.0 / len(sorted_chapters) if sorted_chapters else 1.0)
             chapter_word_count = int(total_words * proportion)
 
             # Get words for this chapter
