@@ -34,7 +34,7 @@ except ImportError:
 def progress_bar(iterable, desc: str = "", total: Optional[int] = None):
     """Wrap iterable with progress bar if tqdm available."""
     if HAS_TQDM:
-        return tqdm(iterable, desc=desc, total=total)
+        yield from tqdm(iterable, desc=desc, total=total)
     else:
         # Simple fallback
         items = list(iterable)
