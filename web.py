@@ -91,8 +91,7 @@ async def dashboard(
     status_filter = status.strip() or None
     articles = db.article_list(status=status_filter, search=search)
     jobs = db.job_list_active()
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "dashboard.html", {
         "articles": articles,
         "jobs": jobs,
         "settings": _settings_context(),
@@ -105,16 +104,14 @@ async def dashboard(
 async def add_url(request: Request, url: str = Form(...)) -> Response:
     url = url.strip()
     if not url:
-        return templates.TemplateResponse("partials/article_list.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "partials/article_list.html", {
             "articles": db.article_list(),
         })
 
     if not _is_valid_youtube_url(url):
         articles = db.article_list()
         jobs = db.job_list_active()
-        return templates.TemplateResponse("partials/article_list.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "partials/article_list.html", {
             "articles": articles,
             "jobs": jobs,
             "error": "Please enter a valid YouTube URL.",
@@ -134,8 +131,7 @@ async def add_url(request: Request, url: str = Form(...)) -> Response:
 
     articles = db.article_list()
     jobs = db.job_list_active()
-    return templates.TemplateResponse("partials/article_list.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "partials/article_list.html", {
         "articles": articles,
         "jobs": jobs,
     })
@@ -156,8 +152,7 @@ async def article_reader(request: Request, video_id: str) -> Response:
         from themes import THEME_DEFAULT
         theme = THEME_DEFAULT
 
-    return templates.TemplateResponse("reader.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "reader.html", {
         "article": article,
         "theme_css": theme.css,
         "settings": settings,
@@ -218,8 +213,7 @@ async def article_regenerate(request: Request, video_id: str) -> Response:
         return HTMLResponse("<h1>Article not found</h1>", status_code=404)
     db.article_update(video_id, status="pending", article_md=None, article_html=None, error=None)
     db.job_create("fetch_video", article_id=article["id"])
-    return templates.TemplateResponse("partials/article_card.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "partials/article_card.html", {
         "article": db.article_get(video_id),
     })
 
@@ -305,8 +299,7 @@ async def article_delete(request: Request, video_id: str) -> Response:
 @app.get("/sources", response_class=HTMLResponse)
 async def sources_page(request: Request) -> Response:
     sources = db.source_list()
-    return templates.TemplateResponse("sources.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "sources.html", {
         "sources": sources,
         "settings": _settings_context(),
     })
@@ -323,8 +316,7 @@ async def sources_add(request: Request, url: str = Form(...), name: str = Form("
         src_id = db.source_add(url, source_type=source_type, name=name.strip())
         db.job_create("fetch_source", source_id=src_id)
     sources = db.source_list()
-    return templates.TemplateResponse("sources.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "sources.html", {
         "sources": sources,
         "settings": _settings_context(),
         "error": error,
@@ -378,8 +370,7 @@ async def sources_toggle_auto_fetch(request: Request, source_id: int) -> Respons
     new_val = 0 if source["auto_fetch"] else 1
     db.source_update(source_id, auto_fetch=new_val)
     source = db.source_get(source_id)
-    return templates.TemplateResponse("partials/source_row.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "partials/source_row.html", {
         "source": source,
     })
 
@@ -395,8 +386,7 @@ async def sources_delete(request: Request, source_id: int) -> Response:
 @app.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request) -> Response:
     from themes import list_themes
-    return templates.TemplateResponse("settings.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "settings.html", {
         "settings": _settings_context(),
         "themes": list_themes(),
     })
@@ -423,8 +413,7 @@ async def settings_save(request: Request) -> Response:
             pass
 
     from themes import list_themes
-    return templates.TemplateResponse("settings.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "settings.html", {
         "settings": _settings_context(),
         "themes": list_themes(),
         "saved": True,
@@ -443,8 +432,7 @@ async def api_articles(
     status_filter = status.strip() or None
     articles = db.article_list(status=status_filter, search=search)
     jobs = db.job_list_active()
-    return templates.TemplateResponse("partials/article_list.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "partials/article_list.html", {
         "articles": articles,
         "jobs": jobs,
     })
@@ -453,8 +441,7 @@ async def api_articles(
 @app.get("/api/jobs", response_class=HTMLResponse)
 async def api_jobs(request: Request) -> Response:
     jobs = db.job_list_active()
-    return templates.TemplateResponse("partials/job_status.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "partials/job_status.html", {
         "jobs": jobs,
     })
 
