@@ -255,7 +255,8 @@ final class ArticlePipeline: ObservableObject {
         }
     }
 
-    private func buildLLMService(settings: AppSettings) -> any LLMService {
+    /// Build the appropriate LLM service based on settings.
+    nonisolated func buildLLMService(settings: AppSettings) -> any LLMService {
         switch settings.llmBackend {
         case .ollama:
             return OllamaService(baseURL: settings.ollamaBaseURL, model: settings.ollamaModel)

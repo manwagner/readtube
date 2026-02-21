@@ -203,6 +203,238 @@ final class EPUBGeneratorTests: XCTestCase {
         XCTAssertTrue(data.count > 100)
     }
 
+    // MARK: - Content validation inside ZIP
+
+    func testEPUBContentOPFContainsTitle() throws {
+        let data = try EPUBGenerator.generate(
+            title: "My Test Title",
+            channel: "My Channel",
+            articleURL: "https://example.com",
+            markdown: "# Content"
+        )
+
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-opf.epub")
+        try data.write(to: tmpURL)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        guard let archive = Archive(url: tmpURL, accessMode: .read) else {
+            XCTFail("Could not open EPUB")
+            return
+        }
+
+        // Extract content.opf
+        guard let entry = archive["OEBPS/content.opf"] else {
+            XCTFail("Missing content.opf")
+            return
+        }
+        var opfData = Data()
+        _ = try archive.extract(entry) { opfData.append($0) }
+        let opf = String(data: opfData, encoding: .utf8)!
+
+        XCTAssertTrue(opf.contains("My Test Title"))
+        XCTAssertTrue(opf.contains("My Channel"))
+        XCTAssertTrue(opf.contains("Readtube"))
+        XCTAssertTrue(opf.contains("dc:language"))
+    }
+
+    func testEPUBChapterContainsContent() throws {
+        let data = try EPUBGenerator.generate(
+            title: "Chapter Test",
+            channel: "Channel",
+            articleURL: "https://example.com",
+            markdown: "# Heading\n\nThis is the article body with **bold** text."
+        )
+
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-chapter.epub")
+        try data.write(to: tmpURL)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        guard let archive = Archive(url: tmpURL, accessMode: .read) else {
+            XCTFail("Could not open EPUB")
+            return
+        }
+
+        guard let entry = archive["OEBPS/chapter_1.xhtml"] else {
+            XCTFail("Missing chapter_1.xhtml")
+            return
+        }
+        var chapterData = Data()
+        _ = try archive.extract(entry) { chapterData.append($0) }
+        let chapter = String(data: chapterData, encoding: .utf8)!
+
+        XCTAssertTrue(chapter.contains("<h1>"))
+        XCTAssertTrue(chapter.contains("Heading"))
+        XCTAssertTrue(chapter.contains("<strong>bold</strong>"))
+        XCTAssertTrue(chapter.contains("article body"))
+    }
+
+    func testEPUBNavContainsTitle() throws {
+        let data = try EPUBGenerator.generate(
+            title: "Nav Test Title",
+            channel: "Channel",
+            articleURL: "https://example.com",
+            markdown: "Content"
+        )
+
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-nav.epub")
+        try data.write(to: tmpURL)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        guard let archive = Archive(url: tmpURL, accessMode: .read) else {
+            XCTFail("Could not open EPUB")
+            return
+        }
+
+        guard let entry = archive["OEBPS/nav.xhtml"] else {
+            XCTFail("Missing nav.xhtml")
+            return
+        }
+        var navData = Data()
+        _ = try archive.extract(entry) { navData.append($0) }
+        let nav = String(data: navData, encoding: .utf8)!
+
+        XCTAssertTrue(nav.contains("Nav Test Title"))
+        XCTAssertTrue(nav.contains("Table of Contents"))
+        XCTAssertTrue(nav.contains("chapter_1.xhtml"))
+    }
+
+    func testEPUBContainsCSSFile() throws {
+        let data = try EPUBGenerator.generate(
+            title: "CSS Test",
+            channel: "Channel",
+            articleURL: "https://example.com",
+            markdown: "Content"
+        )
+
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-css.epub")
+        try data.write(to: tmpURL)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        guard let archive = Archive(url: tmpURL, accessMode: .read) else {
+            XCTFail("Could not open EPUB")
+            return
+        }
+
+        guard let entry = archive["OEBPS/style/typography.css"] else {
+            XCTFail("Missing typography.css")
+            return
+        }
+        var cssData = Data()
+        _ = try archive.extract(entry) { cssData.append($0) }
+        let css = String(data: cssData, encoding: .utf8)!
+
+        // Should contain some CSS content (at least the fallback)
+        XCTAssertTrue(css.contains("body") || css.contains("font"))
+    }
+
+    func testEPUBTocNCXContainsTitle() throws {
+        let data = try EPUBGenerator.generate(
+            title: "TOC Title",
+            channel: "Ch",
+            articleURL: "https://example.com",
+            markdown: "Content"
+        )
+
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-toc.epub")
+        try data.write(to: tmpURL)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        guard let archive = Archive(url: tmpURL, accessMode: .read) else {
+            XCTFail("Could not open EPUB")
+            return
+        }
+
+        guard let entry = archive["OEBPS/toc.ncx"] else {
+            XCTFail("Missing toc.ncx")
+            return
+        }
+        var ncxData = Data()
+        _ = try archive.extract(entry) { ncxData.append($0) }
+        let ncx = String(data: ncxData, encoding: .utf8)!
+
+        XCTAssertTrue(ncx.contains("TOC Title"))
+        XCTAssertTrue(ncx.contains("chapter_1.xhtml"))
+    }
+
+    func testEPUBContainerXMLValid() throws {
+        let data = try EPUBGenerator.generate(
+            title: "Container Test",
+            channel: "Ch",
+            articleURL: "https://example.com",
+            markdown: "Content"
+        )
+
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-container.epub")
+        try data.write(to: tmpURL)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        guard let archive = Archive(url: tmpURL, accessMode: .read) else {
+            XCTFail("Could not open EPUB")
+            return
+        }
+
+        guard let entry = archive["META-INF/container.xml"] else {
+            XCTFail("Missing container.xml")
+            return
+        }
+        var containerData = Data()
+        _ = try archive.extract(entry) { containerData.append($0) }
+        let container = String(data: containerData, encoding: .utf8)!
+
+        XCTAssertTrue(container.contains("OEBPS/content.opf"))
+        XCTAssertTrue(container.contains("rootfile"))
+    }
+
+    // MARK: - XML escaping in EPUB
+
+    func testEPUBEscapesXMLInMetadata() throws {
+        let data = try EPUBGenerator.generate(
+            title: "Title with <special> & \"chars\"",
+            channel: "Channel's & Name",
+            articleURL: "https://example.com/?a=1&b=2",
+            markdown: "Content"
+        )
+
+        let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-escape.epub")
+        try data.write(to: tmpURL)
+        defer { try? FileManager.default.removeItem(at: tmpURL) }
+
+        guard let archive = Archive(url: tmpURL, accessMode: .read) else {
+            XCTFail("Could not open EPUB")
+            return
+        }
+
+        guard let entry = archive["OEBPS/content.opf"] else {
+            XCTFail("Missing content.opf")
+            return
+        }
+        var opfData = Data()
+        _ = try archive.extract(entry) { opfData.append($0) }
+        let opf = String(data: opfData, encoding: .utf8)!
+
+        // Verify XML-escaped content
+        XCTAssertTrue(opf.contains("&lt;special&gt;"))
+        XCTAssertTrue(opf.contains("&amp;"))
+        XCTAssertTrue(opf.contains("&quot;chars&quot;"))
+        XCTAssertTrue(opf.contains("&apos;"))
+    }
+
+    // MARK: - Multiple sequential EPUBs
+
+    func testGenerateMultipleEPUBsSequentially() throws {
+        for i in 1...5 {
+            let data = try EPUBGenerator.generate(
+                title: "Article \(i)",
+                channel: "Channel \(i)",
+                articleURL: "https://example.com/\(i)",
+                markdown: "# Article \(i)\n\nContent for article \(i)."
+            )
+            XCTAssertTrue(data.count > 100)
+            XCTAssertEqual(data[0], 0x50) // P
+            XCTAssertEqual(data[1], 0x4B) // K
+        }
+    }
+
     // MARK: - EPUBError
 
     func testEPUBErrorDescriptions() {
@@ -211,5 +443,15 @@ final class EPUBGeneratorTests: XCTestCase {
 
         let encodingError = EPUBError.encodingFailed
         XCTAssertTrue(encodingError.localizedDescription.contains("UTF-8"))
+    }
+
+    func testEPUBErrorArchiveFailedDescription() {
+        let error = EPUBError.archiveFailed
+        XCTAssertEqual(error.errorDescription, "Failed to create EPUB archive")
+    }
+
+    func testEPUBErrorEncodingFailedDescription() {
+        let error = EPUBError.encodingFailed
+        XCTAssertEqual(error.errorDescription, "Failed to encode content as UTF-8")
     }
 }

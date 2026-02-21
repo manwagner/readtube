@@ -95,4 +95,104 @@ final class ModelTests: XCTestCase {
         XCTAssertTrue(error.localizedDescription.contains("JSON3"))
     }
 
+    // MARK: - ArticleStatus Codable
+
+    func testArticleStatusEncodeDecode() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        for status in ArticleStatus.allCases {
+            let data = try encoder.encode(status)
+            let decoded = try decoder.decode(ArticleStatus.self, from: data)
+            XCTAssertEqual(decoded, status)
+        }
+    }
+
+    // MARK: - SourceType Codable
+
+    func testSourceTypeEncodeDecode() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        for sourceType in SourceType.allCases {
+            let data = try encoder.encode(sourceType)
+            let decoded = try decoder.decode(SourceType.self, from: data)
+            XCTAssertEqual(decoded, sourceType)
+        }
+    }
+
+    func testSourceTypeFromInvalidRaw() {
+        XCTAssertNil(SourceType(rawValue: "invalid"))
+        XCTAssertNil(SourceType(rawValue: ""))
+    }
+
+    // MARK: - LLMBackend Codable
+
+    func testLLMBackendEncodeDecode() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        for backend in LLMBackend.allCases {
+            let data = try encoder.encode(backend)
+            let decoded = try decoder.decode(LLMBackend.self, from: data)
+            XCTAssertEqual(decoded, backend)
+        }
+    }
+
+    // MARK: - ThemeName Codable
+
+    func testThemeNameEncodeDecode() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        for theme in ThemeName.allCases {
+            let data = try encoder.encode(theme)
+            let decoded = try decoder.decode(ThemeName.self, from: data)
+            XCTAssertEqual(decoded, theme)
+        }
+    }
+
+    func testThemeNameFromInvalidRaw() {
+        XCTAssertNil(ThemeName(rawValue: "invalid"))
+        XCTAssertNil(ThemeName(rawValue: ""))
+    }
+
+    // MARK: - ThemeName cssFileName format
+
+    func testThemeNameCSSFileNameHasExtension() {
+        for theme in ThemeName.allCases {
+            XCTAssertTrue(theme.cssFileName.hasSuffix(".css"))
+            XCTAssertTrue(theme.cssFileName.count > 4) // at least "x.css"
+        }
+    }
+
+    // MARK: - LLMBackend display names are non-empty
+
+    func testLLMBackendDisplayNamesAreNonEmpty() {
+        for backend in LLMBackend.allCases {
+            XCTAssertFalse(backend.displayName.isEmpty)
+        }
+    }
+
+    // MARK: - ThemeName display names are non-empty
+
+    func testThemeNameDisplayNamesAreNonEmpty() {
+        for theme in ThemeName.allCases {
+            XCTAssertFalse(theme.displayName.isEmpty)
+        }
+    }
+
+    // MARK: - Enum case counts are stable
+
+    func testArticleStatusCaseCountStable() {
+        XCTAssertEqual(ArticleStatus.allCases.count, 6, "If you add a status, update this test")
+    }
+
+    func testSourceTypeCaseCountStable() {
+        XCTAssertEqual(SourceType.allCases.count, 3, "If you add a source type, update this test")
+    }
+
+    func testLLMBackendCaseCountStable() {
+        XCTAssertEqual(LLMBackend.allCases.count, 3, "If you add a backend, update this test")
+    }
+
+    func testThemeNameCaseCountStable() {
+        XCTAssertEqual(ThemeName.allCases.count, 4, "If you add a theme, update this test")
+    }
 }

@@ -77,6 +77,114 @@ final class OPMLImporterTests: XCTestCase {
         XCTAssertTrue(entries.isEmpty)
     }
 
+    func testOPMLWithTextAttributeOnly() {
+        let opml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <opml version="1.0">
+          <body>
+            <outline text="Channel Name" htmlUrl="https://www.youtube.com/channel/UC789"/>
+          </body>
+        </opml>
+        """
+        let data = opml.data(using: .utf8)!
+        let parser = TestOPMLParser(data: data)
+        let entries = parser.parse()
+
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries[0].title, "Channel Name")
+    }
+
+    func testOPMLWithNestedGroups() {
+        let opml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <opml version="1.0">
+          <body>
+            <outline text="Tech" title="Tech">
+              <outline text="Programming" title="Programming">
+                <outline text="Ch1" htmlUrl="https://www.youtube.com/channel/UC111"/>
+              </outline>
+              <outline text="Hardware" title="Hardware">
+                <outline text="Ch2" htmlUrl="https://www.youtube.com/channel/UC222"/>
+              </outline>
+            </outline>
+            <outline text="Science" title="Science">
+              <outline text="Ch3" htmlUrl="https://www.youtube.com/channel/UC333"/>
+            </outline>
+          </body>
+        </opml>
+        """
+        let data = opml.data(using: .utf8)!
+        let parser = TestOPMLParser(data: data)
+        let entries = parser.parse()
+
+        XCTAssertEqual(entries.count, 3)
+    }
+
+    func testOPMLWithMalformedXML() {
+        let opml = "this is not XML at all"
+        let data = opml.data(using: .utf8)!
+        let parser = TestOPMLParser(data: data)
+        let entries = parser.parse()
+        XCTAssertTrue(entries.isEmpty)
+    }
+
+    func testOPMLWithXmlUrlButNoChannelId() {
+        let opml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <opml version="1.0">
+          <body>
+            <outline text="Channel"
+                     xmlUrl="https://www.youtube.com/feeds/videos.xml?playlist_id=PLxyz"/>
+          </body>
+        </opml>
+        """
+        let data = opml.data(using: .utf8)!
+        let parser = TestOPMLParser(data: data)
+        let entries = parser.parse()
+
+        // Should fall back to using the xmlUrl directly
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries[0].url, "https://www.youtube.com/feeds/videos.xml?playlist_id=PLxyz")
+    }
+
+    func testOPMLWithUnicodeNames() {
+        let opml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <opml version="1.0">
+          <body>
+            <outline text="日本語チャンネル" title="日本語チャンネル"
+                     htmlUrl="https://www.youtube.com/channel/UCjp"/>
+          </body>
+        </opml>
+        """
+        let data = opml.data(using: .utf8)!
+        let parser = TestOPMLParser(data: data)
+        let entries = parser.parse()
+
+        XCTAssertEqual(entries.count, 1)
+        XCTAssertEqual(entries[0].title, "日本語チャンネル")
+    }
+
+    func testOPMLManyEntries() {
+        var body = ""
+        for i in 0..<50 {
+            body += "<outline text=\"Channel \(i)\" htmlUrl=\"https://www.youtube.com/channel/UC\(i)\"/>\n"
+        }
+        let opml = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <opml version="1.0">
+          <body>
+            \(body)
+          </body>
+        </opml>
+        """
+        let data = opml.data(using: .utf8)!
+        let parser = TestOPMLParser(data: data)
+        let entries = parser.parse()
+
+        XCTAssertEqual(entries.count, 50)
+    }
+
     func testPrefersHTMLOverXMLUrl() {
         let opml = """
         <?xml version="1.0" encoding="UTF-8"?>

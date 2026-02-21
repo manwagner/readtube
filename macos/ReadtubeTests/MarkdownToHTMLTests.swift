@@ -120,6 +120,126 @@ final class MarkdownToHTMLTests: XCTestCase {
 
     // MARK: - Complex document
 
+    // MARK: - Nested formatting
+
+    func testNestedBoldItalic() {
+        let html = MarkdownToHTML.convert("***bold and italic***")
+        XCTAssertTrue(html.contains("<strong>") || html.contains("<em>"))
+    }
+
+    func testBoldInsideItalic() {
+        let html = MarkdownToHTML.convert("*italic with **bold** inside*")
+        XCTAssertTrue(html.contains("<em>"))
+        XCTAssertTrue(html.contains("<strong>bold</strong>"))
+    }
+
+    // MARK: - Nested lists
+
+    func testNestedUnorderedList() {
+        let md = "- item 1\n  - nested 1\n  - nested 2\n- item 2"
+        let html = MarkdownToHTML.convert(md)
+        XCTAssertTrue(html.contains("<ul>"))
+        XCTAssertTrue(html.contains("nested 1"))
+        XCTAssertTrue(html.contains("nested 2"))
+    }
+
+    // MARK: - Line breaks
+
+    func testLineBreakWithTwoSpaces() {
+        let md = "line one  \nline two"
+        let html = MarkdownToHTML.convert(md)
+        XCTAssertTrue(html.contains("<br>"))
+        XCTAssertTrue(html.contains("line one"))
+        XCTAssertTrue(html.contains("line two"))
+    }
+
+    func testSoftBreak() {
+        let md = "line one\nline two"
+        let html = MarkdownToHTML.convert(md)
+        // Soft break should NOT produce <br>
+        XCTAssertFalse(html.contains("<br>"))
+        XCTAssertTrue(html.contains("line one"))
+        XCTAssertTrue(html.contains("line two"))
+    }
+
+    // MARK: - Edge cases
+
+    func testImageWithNoAlt() {
+        let html = MarkdownToHTML.convert("![](https://example.com/img.jpg)")
+        XCTAssertTrue(html.contains("<img src=\"https://example.com/img.jpg\""))
+        XCTAssertTrue(html.contains("alt=\"\""))
+    }
+
+    func testLinkWithEmptyText() {
+        let html = MarkdownToHTML.convert("[](https://example.com)")
+        XCTAssertTrue(html.contains("<a href=\"https://example.com\">"))
+    }
+
+    func testConsecutiveBlockquotes() {
+        let md = "> quote one\n\n> quote two"
+        let html = MarkdownToHTML.convert(md)
+        let blockquoteCount = html.components(separatedBy: "<blockquote>").count - 1
+        XCTAssertEqual(blockquoteCount, 2)
+    }
+
+    func testMultipleHeadingLevels() {
+        let md = "# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6"
+        let html = MarkdownToHTML.convert(md)
+        XCTAssertTrue(html.contains("<h1>H1</h1>"))
+        XCTAssertTrue(html.contains("<h2>H2</h2>"))
+        XCTAssertTrue(html.contains("<h3>H3</h3>"))
+        XCTAssertTrue(html.contains("<h4>H4</h4>"))
+        XCTAssertTrue(html.contains("<h5>H5</h5>"))
+        XCTAssertTrue(html.contains("<h6>H6</h6>"))
+    }
+
+    func testCodeBlockWithoutLanguage() {
+        let md = "```\nplain code\n```"
+        let html = MarkdownToHTML.convert(md)
+        XCTAssertTrue(html.contains("<pre><code>"))
+        XCTAssertFalse(html.contains("language-"))
+        XCTAssertTrue(html.contains("plain code"))
+    }
+
+    func testHTMLEscapingInLink() {
+        let html = MarkdownToHTML.convert("[click & go](https://example.com?a=1&b=2)")
+        XCTAssertTrue(html.contains("click &amp; go"))
+        XCTAssertTrue(html.contains("a=1&amp;b=2"))
+    }
+
+    func testQuotesInAttribute() {
+        let html = MarkdownToHTML.convert("[text](https://example.com/path?q=\"test\")")
+        XCTAssertTrue(html.contains("&quot;"))
+    }
+
+    func testOnlyWhitespace() {
+        let html = MarkdownToHTML.convert("   \n  \n   ")
+        XCTAssertTrue(html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+
+    func testOrderedListStartsAtOne() {
+        let md = "1. first\n2. second\n3. third"
+        let html = MarkdownToHTML.convert(md)
+        XCTAssertTrue(html.contains("<ol>"))
+        XCTAssertTrue(html.contains("<li>"))
+        XCTAssertTrue(html.contains("first"))
+        XCTAssertTrue(html.contains("third"))
+    }
+
+    func testLargeDocument() {
+        var md = ""
+        for i in 1...50 {
+            md += "## Section \(i)\n\nThis is paragraph \(i) with **bold** and *italic* text.\n\n"
+        }
+        let html = MarkdownToHTML.convert(md)
+        XCTAssertTrue(html.contains("<h2>Section 1</h2>"))
+        XCTAssertTrue(html.contains("<h2>Section 50</h2>"))
+        XCTAssertTrue(html.contains("<strong>bold</strong>"))
+        XCTAssertTrue(html.contains("<em>italic</em>"))
+    }
+
+    // MARK: - Complex document
+
     func testComplexDocument() {
         let md = """
         # Article Title
