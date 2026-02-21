@@ -15,8 +15,10 @@ struct ReadtubeApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(pipeline)
+                .frame(minWidth: 800, minHeight: 500)
         }
         .modelContainer(modelContainer)
+        .defaultSize(width: 1100, height: 700)
 
         Settings {
             SettingsView()

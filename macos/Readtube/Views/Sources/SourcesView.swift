@@ -102,7 +102,6 @@ struct SourcesView: View {
                 .listStyle(.inset(alternatesRowBackgrounds: true))
             }
         }
-        .navigationTitle("Sources")
         .sheet(isPresented: $showAddSheet) {
             addSourceSheet
         }

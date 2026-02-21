@@ -1,7 +1,8 @@
 import SwiftUI
 import SwiftData
 
-struct DashboardView: View {
+/// Article list shown in the sidebar — URL input, search, and scrollable article list.
+struct ArticleListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var pipeline: ArticlePipeline
     @Binding var selectedArticle: Article?
@@ -30,70 +31,85 @@ struct DashboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // URL input bar
-            HStack(spacing: 8) {
-                TextField("Paste YouTube URL...", text: $urlInput)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { addURL() }
+            // URL input
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    TextField("YouTube URL", text: $urlInput)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { addURL() }
 
-                Button {
-                    if let str = NSPasteboard.general.string(forType: .string) {
-                        urlInput = str
+                    Button { pasteFromClipboard() } label: {
+                        Image(systemName: "doc.on.clipboard")
                     }
-                } label: {
-                    Image(systemName: "doc.on.clipboard")
+                    .help("Paste from clipboard")
+
+                    Button("Add") { addURL() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(urlInput.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .help("Paste from clipboard")
 
-                Button("Add") { addURL() }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(urlInput.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
-            .padding()
-
-            if let error = errorMessage {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                    Spacer()
-                    Button("Dismiss") { errorMessage = nil }
-                        .font(.caption)
+                if let error = errorMessage {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.caption)
+                        Text(error)
+                            .font(.caption)
+                            .lineLimit(2)
+                        Spacer()
+                        Button { errorMessage = nil } label: {
+                            Image(systemName: "xmark")
+                                .font(.caption2)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .foregroundStyle(.red)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 4)
             }
+            .padding(10)
 
-            // Search and filter bar
-            HStack {
-                TextField("Search articles...", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
+            Divider()
 
-                Picker("Status", selection: $statusFilter) {
+            // Search + filter
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                TextField("Search", text: $searchText)
+                    .textFieldStyle(.plain)
+
+                Picker("", selection: $statusFilter) {
                     Text("All").tag(nil as ArticleStatus?)
                     ForEach(ArticleStatus.allCases, id: \.self) { status in
                         Text(status.rawValue.capitalized).tag(status as ArticleStatus?)
                     }
                 }
-                .frame(width: 140)
+                .labelsHidden()
+                .fixedSize()
             }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
 
             Divider()
 
             // Article list
             if filteredArticles.isEmpty {
-                ContentUnavailableView(
-                    "No Articles",
-                    systemImage: "newspaper",
-                    description: Text("Paste a YouTube URL above to get started")
-                )
+                VStack(spacing: 8) {
+                    Spacer()
+                    Image(systemName: "newspaper")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.quaternary)
+                    Text("No Articles")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Text("Paste a YouTube URL above")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
             } else {
                 List(filteredArticles, selection: $selectedArticle) { article in
-                    ArticleCardView(article: article)
+                    ArticleRow(article: article)
                         .tag(article)
                         .contextMenu {
                             if article.status == .done {
@@ -113,11 +129,13 @@ struct DashboardView: View {
                             }
                         }
                 }
-                .listStyle(.inset(alternatesRowBackgrounds: true))
+                .listStyle(.sidebar)
             }
         }
-        .navigationTitle("Dashboard")
+        .navigationTitle("Readtube")
     }
+
+    // MARK: - Actions
 
     private func addURL() {
         let url = urlInput.trimmingCharacters(in: .whitespaces)
@@ -131,6 +149,12 @@ struct DashboardView: View {
         }
     }
 
+    private func pasteFromClipboard() {
+        if let str = NSPasteboard.general.string(forType: .string) {
+            urlInput = str
+        }
+    }
+
     private func exportMarkdown(_ article: Article) {
         guard let md = article.articleMarkdown else { return }
         let panel = NSSavePanel()
@@ -141,6 +165,55 @@ struct DashboardView: View {
             if response == .OK, let url = panel.url {
                 try? md.write(to: url, atomically: true, encoding: .utf8)
             }
+        }
+    }
+}
+
+/// Compact article row for the sidebar list.
+struct ArticleRow: View {
+    let article: Article
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Status indicator
+            statusDot
+                .frame(width: 8)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(article.title.isEmpty ? article.videoID : article.title)
+                    .font(.system(.body, weight: .medium))
+                    .lineLimit(2)
+
+                if !article.channel.isEmpty {
+                    Text(article.channel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if article.status != .done {
+                    Text(article.status.rawValue.capitalized)
+                        .font(.caption2)
+                        .foregroundStyle(article.status == .error ? .red : .orange)
+                }
+            }
+        }
+        .padding(.vertical, 3)
+    }
+
+    @ViewBuilder
+    private var statusDot: some View {
+        switch article.status {
+        case .done:
+            Circle().fill(.green).frame(width: 8, height: 8)
+        case .error:
+            Circle().fill(.red).frame(width: 8, height: 8)
+        case .pending:
+            Circle().fill(.secondary.opacity(0.4)).frame(width: 8, height: 8)
+        case .fetching, .transcribing, .generating:
+            ProgressView()
+                .controlSize(.mini)
+                .scaleEffect(0.6)
         }
     }
 }

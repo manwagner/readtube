@@ -1,39 +1,23 @@
 import SwiftUI
 import SwiftData
 
-enum SidebarItem: String, CaseIterable, Identifiable {
-    case dashboard = "Dashboard"
-    case sources = "Sources"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .dashboard: return "newspaper"
-        case .sources: return "antenna.radiowaves.left.and.right"
-        }
-    }
-}
-
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var pipeline: ArticlePipeline
-    @State private var selectedSidebar: SidebarItem? = .dashboard
     @State private var selectedArticle: Article?
+    @State private var showSources = false
 
     var body: some View {
         NavigationSplitView {
-            SidebarView(selection: $selectedSidebar)
-        } content: {
-            switch selectedSidebar {
-            case .dashboard:
-                DashboardView(selectedArticle: $selectedArticle)
-            case .sources:
-                SourcesView()
-            case nil:
-                Text("Select an item")
-                    .foregroundStyle(.secondary)
-            }
+            ArticleListView(selectedArticle: $selectedArticle)
+                .navigationSplitViewColumnWidth(min: 280, ideal: 340, max: 480)
+                .toolbar {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { showSources.toggle() } label: {
+                            Label("Sources", systemImage: "antenna.radiowaves.left.and.right")
+                        }
+                    }
+                }
         } detail: {
             if let article = selectedArticle, article.status == .done {
                 ReaderView(article: article)
@@ -66,6 +50,9 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .sheet(isPresented: $showSources) {
+            SourcesSheet()
+        }
         .onAppear {
             pipeline.start(modelContext: modelContext)
         }
@@ -87,5 +74,25 @@ struct ContentView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.red)
         }
+    }
+}
+
+/// Sources as a sheet instead of a separate navigation destination.
+struct SourcesSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Sources")
+                    .font(.headline)
+                Spacer()
+                Button("Done") { dismiss() }
+            }
+            .padding()
+            Divider()
+            SourcesView()
+        }
+        .frame(width: 600, height: 500)
     }
 }
