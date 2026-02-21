@@ -1,0 +1,156 @@
+import SwiftUI
+import SwiftData
+
+struct ReaderView: View {
+    let article: Article
+    @Environment(\.modelContext) private var modelContext
+    @State private var currentTheme: ThemeName = .default
+    @State private var coordinator: ReaderWebView.Coordinator?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Toolbar
+            HStack {
+                // Theme picker
+                Picker("Theme", selection: $currentTheme) {
+                    ForEach(ThemeName.allCases, id: \.self) { theme in
+                        Text(theme.displayName).tag(theme)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 400)
+
+                Spacer()
+
+                // Export buttons
+                Menu {
+                    Button("Export EPUB") { exportEPUB() }
+                    Button("Export PDF") { exportPDF() }
+                    Button("Export Markdown") { exportMarkdown() }
+                    Button("Export HTML") { exportHTML() }
+                } label: {
+                    Label("Export", systemImage: "square.and.arrow.up")
+                }
+
+                // Open in YouTube
+                if let url = URL(string: article.url) {
+                    Button {
+                        NSWorkspace.shared.open(url)
+                    } label: {
+                        Label("YouTube", systemImage: "play.rectangle")
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+
+            Divider()
+
+            // Web reader
+            ReaderWebView(
+                htmlContent: article.articleHTML ?? "",
+                theme: currentTheme,
+                title: article.title,
+                channel: article.channel,
+                url: article.url,
+                coordinatorRef: $coordinator
+            )
+        }
+        .navigationTitle(article.title)
+        .onAppear {
+            // Load saved theme from settings
+            let settings = AppSettings.getOrCreate(context: modelContext)
+            currentTheme = settings.theme
+        }
+    }
+
+    // MARK: - Export
+
+    private func exportEPUB() {
+        guard let md = article.articleMarkdown else { return }
+        let panel = NSSavePanel()
+        let safeTitle = safeName(article.title)
+        panel.nameFieldStringValue = "\(safeTitle).epub"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            Task {
+                do {
+                    let data = try EPUBGenerator.generate(
+                        title: article.title,
+                        channel: article.channel,
+                        articleURL: article.url,
+                        markdown: md,
+                        thumbnailURL: article.thumbnailURL
+                    )
+                    try data.write(to: url)
+                } catch {
+                    print("EPUB export failed: \(error)")
+                }
+            }
+        }
+    }
+
+    private func exportPDF() {
+        let panel = NSSavePanel()
+        let safeTitle = safeName(article.title)
+        panel.nameFieldStringValue = "\(safeTitle).pdf"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            Task { @MainActor in
+                guard let coordinator = coordinator else {
+                    print("PDF export failed: no webView coordinator")
+                    return
+                }
+                do {
+                    let data = try await coordinator.exportPDF()
+                    try data.write(to: url)
+                } catch {
+                    print("PDF export failed: \(error)")
+                }
+            }
+        }
+    }
+
+    private func exportMarkdown() {
+        guard let md = article.articleMarkdown else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "\(safeName(article.title)).md"
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                try? md.write(to: url, atomically: true, encoding: .utf8)
+            }
+        }
+    }
+
+    private func exportHTML() {
+        guard let html = article.articleHTML else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "\(safeName(article.title)).html"
+        panel.begin { response in
+            if response == .OK, let url = panel.url {
+                // Wrap in full HTML document with CSS
+                let typographyCSS = Bundle.main.url(forResource: "Typography", withExtension: "css")
+                    .flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
+                let fullHTML = """
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>\(article.title)</title>
+                        <style>\(typographyCSS)</style>
+                    </head>
+                    <body>
+                        \(html)
+                    </body>
+                    </html>
+                    """
+                try? fullHTML.write(to: url, atomically: true, encoding: .utf8)
+            }
+        }
+    }
+
+    private func safeName(_ title: String) -> String {
+        let cleaned = title.filter { $0.isLetter || $0.isNumber || $0 == " " || $0 == "-" }
+        return String(cleaned.prefix(50)).trimmingCharacters(in: .whitespaces)
+    }
+}
