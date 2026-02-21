@@ -73,6 +73,7 @@ struct ReaderWebView: NSViewRepresentable {
         var webView: WKWebView?
 
         /// Export the current page as PDF.
+        @MainActor
         func exportPDF() async throws -> Data {
             guard let webView = webView else { throw ExportError.noWebView }
             let config = WKPDFConfiguration()

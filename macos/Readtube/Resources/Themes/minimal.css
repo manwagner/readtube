@@ -2,7 +2,7 @@
 body {
     font-family: Georgia, "Times New Roman", serif;
     font-size: 1.2em;
-    line-height: 1.8;
+    line-height: 1.7;
     color: #222;
     max-width: 600px;
     margin: 0 auto;
@@ -28,9 +28,9 @@ h3 { font-size: 1.1em; }
 blockquote {
     margin: 2em 0;
     padding-left: 2em;
-    border-left: 1px solid #ccc;
+    border-left: 2px solid #ccc;
     font-style: italic;
-    color: #555;
+    color: #666;
 }
 
 a { color: inherit; }

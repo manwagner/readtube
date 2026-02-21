@@ -151,7 +151,10 @@ enum EPUBGenerator {
         // Remove if exists
         try? fm.removeItem(at: outputURL)
 
-        guard let archive = Archive(url: outputURL, accessMode: .create) else {
+        let archive: Archive
+        do {
+            archive = try Archive(url: outputURL, accessMode: .create)
+        } catch {
             throw EPUBError.archiveFailed
         }
 

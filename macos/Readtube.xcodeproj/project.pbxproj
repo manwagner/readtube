@@ -8,56 +8,69 @@
 
 /* Begin PBXBuildFile section */
 		008D5A7892CE19E3ABA5D4F2 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F5D6C76F5FF4E1A85DB151 /* Enums.swift */; };
+		012620190126E067CE6D6C12 /* ArticlePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BE3B0247966D10FD161B4 /* ArticlePipeline.swift */; };
 		07E177883E24B0E7ACB98943 /* ArticleCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9A4D1AC4B56B76BE71834 /* ArticleCardView.swift */; };
 		08FAC98CCC3C56B974CF1EE8 /* LLMServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCC6A010BDFE1138BA5BE6B /* LLMServiceTests.swift */; };
 		0F96619ED262F908D3422C62 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 5DD3450E170F22B9AC8D6489 /* Markdown */; };
+		107EB382325E2873D9A16371 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F5D6C76F5FF4E1A85DB151 /* Enums.swift */; };
+		15E1D6A6905BCCB694EABB3F /* MarkdownToHTML.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56712871CBBC2F6DADBB2DE /* MarkdownToHTML.swift */; };
 		2BF97BB5AC2DD5FB83361D7B /* MarkdownToHTML.swift in Sources */ = {isa = PBXBuildFile; fileRef = D56712871CBBC2F6DADBB2DE /* MarkdownToHTML.swift */; };
 		2C74CCAB582917781EF2D97D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF91FBB384DF88DEC647D5 /* AppSettings.swift */; };
 		372EA392AF4219472159AC36 /* YTDLPServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 270445C6B55B0587A277CA6A /* YTDLPServiceTests.swift */; };
+		37F1DEA4EBA00D7CA13790BA /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4874EE743FECCFA7E56B981 /* IntegrationTests.swift */; };
+		3896ADE8A1249FDE5322D891 /* OPMLImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B7ACD95EEADCD8E38DA85FB /* OPMLImporterTests.swift */; };
 		3FC0B6E6FE6429BBAEEEE1A2 /* OPMLImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0085C16C514F7B0B373A25 /* OPMLImporter.swift */; };
+		41E000499E3C96AA1E32BBFE /* EPUBGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547C8B967222FE0373986A99 /* EPUBGenerator.swift */; };
 		47C7E1C869D8F738FCE85113 /* ReadtubeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBDCDA1B46DE9E8CB818BEF7 /* ReadtubeApp.swift */; };
 		5488B3C778EDDFA2E374C080 /* YTDLPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50A14AB5A1A7C73C79D408E /* YTDLPService.swift */; };
+		622C5BB2D4448FCA6920C8FE /* ArticlePipelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B64BA671963351E00F1BEA /* ArticlePipelineTests.swift */; };
 		64B40CDDB9EBF549972A7823 /* SourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379E0172BD93B0D4EEDC4A9A /* SourcesView.swift */; };
+		671F11B12A240D156AABAC08 /* LLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A876D4EC3A955CD686C32BB /* LLMService.swift */; };
+		6872C1CECA7E4F759CCDA0E6 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF91FBB384DF88DEC647D5 /* AppSettings.swift */; };
+		788824C893937136A14DD2D1 /* TranscriptParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1466FEFE1CA35116539C96CD /* TranscriptParser.swift */; };
 		7D1B68309F30DC2652F74EE9 /* EPUBGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 547C8B967222FE0373986A99 /* EPUBGenerator.swift */; };
 		8B4E8449A6375A15667AAD97 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 369D679D4DAC2D6F03DD2E53 /* ZIPFoundation */; };
 		8BF205594BD76E60AB969549 /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CE0A3DC430F18A2AA0EFFA3 /* Source.swift */; };
 		9048F3DA7FFC508BE2F9F5AD /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25BE15D79F8C216604402B1F /* Article.swift */; };
 		907EC4B31DE6588318661B59 /* TranscriptParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1466FEFE1CA35116539C96CD /* TranscriptParser.swift */; };
+		91B012C0130982C4F993C6E4 /* PromptTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9061EC6DC33353E8EEF99F2 /* PromptTemplates.swift */; };
 		9F39D810D193EFC4ACAAF373 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74D3DF422D5B0C802561F42 /* ReaderView.swift */; };
+		AC2F881316318CCE8033FC2D /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25BE15D79F8C216604402B1F /* Article.swift */; };
 		BB70E770D61363CF945CF684 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC411A04360854323E180530 /* ContentView.swift */; };
 		BCA391C37BAD9843A3FFBDA2 /* EPUBGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26107C0A8A4219B45FC4030 /* EPUBGeneratorTests.swift */; };
+		BF70D7401EE8E4E05F2DB1C6 /* YTDLPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50A14AB5A1A7C73C79D408E /* YTDLPService.swift */; };
+		C5DD859146FF9EF5E21DB6AA /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CE0A3DC430F18A2AA0EFFA3 /* Source.swift */; };
 		CBD85BE908C39B7FADFC68F2 /* PromptTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9061EC6DC33353E8EEF99F2 /* PromptTemplates.swift */; };
+		CC0A04070C2819F1D5D674A5 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = FF2764A0F1A135A0A7ED11A4 /* Markdown */; };
 		CCAFF4C0C6A48AF2394E5ACD /* ArticlePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98BE3B0247966D10FD161B4 /* ArticlePipeline.swift */; };
 		CFFE0DF0E7ED4BEE22F2F8B4 /* TranscriptParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C2D1FD259749267D27B3E55 /* TranscriptParserTests.swift */; };
 		E6E95338A9EAF849C4DB0FF1 /* LLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A876D4EC3A955CD686C32BB /* LLMService.swift */; };
+		E709F9024ADBA49A39822EC6 /* MarkdownToHTMLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D774AE203DE854C9A2A978 /* MarkdownToHTMLTests.swift */; };
 		ECAC0B76960EE424C6290049 /* ReaderWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779AEB39CD859BD962A0C0DE /* ReaderWebView.swift */; };
+		F44C35C9F6BED5CA89482065 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88947F6BDB4C87C06F1F6A11 /* ModelTests.swift */; };
 		F5CE62105059DB9F41FFD69A /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF91F81768F7EF782C36D722 /* DashboardView.swift */; };
 		F86F1226C531E82B48355C4A /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEEFE6127D4514652D64B5D5 /* SidebarView.swift */; };
 		F8E09CF02432AD8FF3472CA4 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BB5F0530F82C0C33D53ABD1 /* SettingsView.swift */; };
+		FCA8FE5AF445BBD38BF668AD /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = EA54980FC2E9B4A750CD608A /* ZIPFoundation */; };
+		FDFF12918363211976C65BA5 /* OPMLImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E0085C16C514F7B0B373A25 /* OPMLImporter.swift */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		6A236601AF851C1195E74C61 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B346BED9053751802E41B32F /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EADFE060D973374970FBF6FA;
-			remoteInfo = Readtube;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		09A9A4D1AC4B56B76BE71834 /* ArticleCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleCardView.swift; sourceTree = "<group>"; };
 		0E0085C16C514F7B0B373A25 /* OPMLImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OPMLImporter.swift; sourceTree = "<group>"; };
 		1466FEFE1CA35116539C96CD /* TranscriptParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptParser.swift; sourceTree = "<group>"; };
+		15D774AE203DE854C9A2A978 /* MarkdownToHTMLTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownToHTMLTests.swift; sourceTree = "<group>"; };
 		1C2D1FD259749267D27B3E55 /* TranscriptParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptParserTests.swift; sourceTree = "<group>"; };
 		25BE15D79F8C216604402B1F /* Article.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Article.swift; sourceTree = "<group>"; };
 		270445C6B55B0587A277CA6A /* YTDLPServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YTDLPServiceTests.swift; sourceTree = "<group>"; };
+		29B64BA671963351E00F1BEA /* ArticlePipelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticlePipelineTests.swift; sourceTree = "<group>"; };
 		379E0172BD93B0D4EEDC4A9A /* SourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourcesView.swift; sourceTree = "<group>"; };
+		3B7ACD95EEADCD8E38DA85FB /* OPMLImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OPMLImporterTests.swift; sourceTree = "<group>"; };
 		547C8B967222FE0373986A99 /* EPUBGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBGenerator.swift; sourceTree = "<group>"; };
 		6A876D4EC3A955CD686C32BB /* LLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMService.swift; sourceTree = "<group>"; };
 		6BB5F0530F82C0C33D53ABD1 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		779AEB39CD859BD962A0C0DE /* ReaderWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderWebView.swift; sourceTree = "<group>"; };
+		88947F6BDB4C87C06F1F6A11 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		93B6712DF7E58AF20AB36555 /* ReadtubeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReadtubeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9CE0A3DC430F18A2AA0EFFA3 /* Source.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Source.swift; sourceTree = "<group>"; };
 		A5EF91FBB384DF88DEC647D5 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
@@ -65,6 +78,7 @@
 		ADCC6A010BDFE1138BA5BE6B /* LLMServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMServiceTests.swift; sourceTree = "<group>"; };
 		B26107C0A8A4219B45FC4030 /* EPUBGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBGeneratorTests.swift; sourceTree = "<group>"; };
 		BF91F81768F7EF782C36D722 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		C4874EE743FECCFA7E56B981 /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		C4F5D6C76F5FF4E1A85DB151 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		C74D3DF422D5B0C802561F42 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		C98BE3B0247966D10FD161B4 /* ArticlePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticlePipeline.swift; sourceTree = "<group>"; };
@@ -77,6 +91,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		3E24098174B6FA2755BB1E0D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FCA8FE5AF445BBD38BF668AD /* ZIPFoundation in Frameworks */,
+				CC0A04070C2819F1D5D674A5 /* Markdown in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3386A6EADA7212B752D9F03 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -109,8 +132,13 @@
 		134DF791D381836ADD5CB373 /* ReadtubeTests */ = {
 			isa = PBXGroup;
 			children = (
+				29B64BA671963351E00F1BEA /* ArticlePipelineTests.swift */,
 				B26107C0A8A4219B45FC4030 /* EPUBGeneratorTests.swift */,
+				C4874EE743FECCFA7E56B981 /* IntegrationTests.swift */,
 				ADCC6A010BDFE1138BA5BE6B /* LLMServiceTests.swift */,
+				15D774AE203DE854C9A2A978 /* MarkdownToHTMLTests.swift */,
+				88947F6BDB4C87C06F1F6A11 /* ModelTests.swift */,
+				3B7ACD95EEADCD8E38DA85FB /* OPMLImporterTests.swift */,
 				1C2D1FD259749267D27B3E55 /* TranscriptParserTests.swift */,
 				270445C6B55B0587A277CA6A /* YTDLPServiceTests.swift */,
 			);
@@ -218,14 +246,16 @@
 			buildConfigurationList = AA1C3BAA92994038E3866764 /* Build configuration list for PBXNativeTarget "ReadtubeTests" */;
 			buildPhases = (
 				51E67046B2043F78C69DF8FF /* Sources */,
+				3E24098174B6FA2755BB1E0D /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				4E920FB00D825D2F0F6BB7C5 /* PBXTargetDependency */,
 			);
 			name = ReadtubeTests;
 			packageProductDependencies = (
+				EA54980FC2E9B4A750CD608A /* ZIPFoundation */,
+				FF2764A0F1A135A0A7ED11A4 /* Markdown */,
 			);
 			productName = ReadtubeTests;
 			productReference = 93B6712DF7E58AF20AB36555 /* ReadtubeTests.xctest */;
@@ -360,22 +390,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6872C1CECA7E4F759CCDA0E6 /* AppSettings.swift in Sources */,
+				AC2F881316318CCE8033FC2D /* Article.swift in Sources */,
+				012620190126E067CE6D6C12 /* ArticlePipeline.swift in Sources */,
+				622C5BB2D4448FCA6920C8FE /* ArticlePipelineTests.swift in Sources */,
+				41E000499E3C96AA1E32BBFE /* EPUBGenerator.swift in Sources */,
 				BCA391C37BAD9843A3FFBDA2 /* EPUBGeneratorTests.swift in Sources */,
+				107EB382325E2873D9A16371 /* Enums.swift in Sources */,
+				37F1DEA4EBA00D7CA13790BA /* IntegrationTests.swift in Sources */,
+				671F11B12A240D156AABAC08 /* LLMService.swift in Sources */,
 				08FAC98CCC3C56B974CF1EE8 /* LLMServiceTests.swift in Sources */,
+				15E1D6A6905BCCB694EABB3F /* MarkdownToHTML.swift in Sources */,
+				E709F9024ADBA49A39822EC6 /* MarkdownToHTMLTests.swift in Sources */,
+				F44C35C9F6BED5CA89482065 /* ModelTests.swift in Sources */,
+				FDFF12918363211976C65BA5 /* OPMLImporter.swift in Sources */,
+				3896ADE8A1249FDE5322D891 /* OPMLImporterTests.swift in Sources */,
+				91B012C0130982C4F993C6E4 /* PromptTemplates.swift in Sources */,
+				C5DD859146FF9EF5E21DB6AA /* Source.swift in Sources */,
+				788824C893937136A14DD2D1 /* TranscriptParser.swift in Sources */,
 				CFFE0DF0E7ED4BEE22F2F8B4 /* TranscriptParserTests.swift in Sources */,
+				BF70D7401EE8E4E05F2DB1C6 /* YTDLPService.swift in Sources */,
 				372EA392AF4219472159AC36 /* YTDLPServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		4E920FB00D825D2F0F6BB7C5 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = EADFE060D973374970FBF6FA /* Readtube */;
-			targetProxy = 6A236601AF851C1195E74C61 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		29F1CB7B87C775293EF8062A /* Release */ = {
@@ -459,6 +498,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -466,7 +506,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.readtube.ReadtubeTests;
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Readtube.app/Contents/MacOS/Readtube";
 			};
 			name = Release;
 		};
@@ -558,6 +597,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -565,7 +605,6 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.readtube.ReadtubeTests;
 				SDKROOT = macosx;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Readtube.app/Contents/MacOS/Readtube";
 			};
 			name = Debug;
 		};
@@ -627,6 +666,16 @@
 			productName = ZIPFoundation;
 		};
 		5DD3450E170F22B9AC8D6489 /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9EE97DED94A7B7233428093F /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
+		};
+		EA54980FC2E9B4A750CD608A /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C2B172375206BF026136DA73 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		FF2764A0F1A135A0A7ED11A4 /* Markdown */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9EE97DED94A7B7233428093F /* XCRemoteSwiftPackageReference "swift-markdown" */;
 			productName = Markdown;

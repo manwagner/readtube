@@ -6,7 +6,7 @@ body {
     color: #333;
     max-width: 680px;
     margin: 0 auto;
-    padding: 2em 1.5em;
+    padding: 2.5em 1.5em;
     text-rendering: optimizeLegibility;
 }
 
@@ -30,9 +30,10 @@ h3 { font-size: 1.2em; }
 blockquote {
     margin: 1.5em 0;
     padding: 1em 1.5em;
-    background: #f7f7f7;
+    background: rgba(0, 102, 204, 0.04);
     border-left: 4px solid #0066cc;
     font-style: normal;
+    border-radius: 0 6px 6px 0;
 }
 
 a { color: #0066cc; text-decoration: none; }
@@ -44,18 +45,20 @@ a:hover { text-decoration: underline; }
     padding: 1.5em;
     margin-bottom: 2em;
     border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
 }
 
 .intro p { margin: 0; }
+.intro strong { color: white; }
 
 .watch-link {
-    margin-top: 2em;
+    margin-top: 3em;
     padding: 1em;
     background: #f0f0f0;
     border-radius: 8px;
     text-align: center;
 }
-
+.watch-link a { color: #0066cc; }
 .watch-link p { margin: 0; }
 
 code {

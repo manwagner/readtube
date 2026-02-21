@@ -11,6 +11,7 @@ struct ArticleListView: View {
     @State private var searchText = ""
     @State private var statusFilter: ArticleStatus?
     @State private var errorMessage: String?
+    @State private var isErrorVisible = false
 
     @Query(sort: \Article.createdAt, order: .reverse) private var allArticles: [Article]
 
@@ -34,7 +35,7 @@ struct ArticleListView: View {
             // URL input
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    TextField("YouTube URL", text: $urlInput)
+                    TextField("Paste a YouTube URL...", text: $urlInput)
                         .textFieldStyle(.roundedBorder)
                         .onSubmit { addURL() }
 
@@ -48,21 +49,26 @@ struct ArticleListView: View {
                         .disabled(urlInput.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
 
-                if let error = errorMessage {
-                    HStack(spacing: 4) {
-                        Image(systemName: "exclamationmark.triangle")
+                if isErrorVisible, let error = errorMessage {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
                             .font(.caption)
+                            .foregroundStyle(.red)
                         Text(error)
                             .font(.caption)
+                            .foregroundStyle(.secondary)
                             .lineLimit(2)
                         Spacer()
-                        Button { errorMessage = nil } label: {
-                            Image(systemName: "xmark")
-                                .font(.caption2)
+                        Button { withAnimation { isErrorVisible = false } } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         }
                         .buttonStyle(.plain)
                     }
-                    .foregroundStyle(.red)
+                    .padding(8)
+                    .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
             .padding(10)
@@ -72,10 +78,11 @@ struct ArticleListView: View {
             // Search + filter
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.tertiary)
                     .font(.caption)
-                TextField("Search", text: $searchText)
+                TextField("Search articles...", text: $searchText)
                     .textFieldStyle(.plain)
+                    .font(.callout)
 
                 Picker("", selection: $statusFilter) {
                     Text("All").tag(nil as ArticleStatus?)
@@ -87,26 +94,13 @@ struct ArticleListView: View {
                 .fixedSize()
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.vertical, 8)
 
             Divider()
 
             // Article list
             if filteredArticles.isEmpty {
-                VStack(spacing: 8) {
-                    Spacer()
-                    Image(systemName: "newspaper")
-                        .font(.system(size: 36))
-                        .foregroundStyle(.quaternary)
-                    Text("No Articles")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    Text("Paste a YouTube URL above")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity)
+                emptyState
             } else {
                 List(filteredArticles, selection: $selectedArticle) { article in
                     ArticleRow(article: article)
@@ -135,6 +129,26 @@ struct ArticleListView: View {
         .navigationTitle("Readtube")
     }
 
+    // MARK: - Empty state
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "text.document")
+                .font(.system(size: 44))
+                .foregroundStyle(.quaternary)
+            Text("No Articles Yet")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            Text("Paste a YouTube URL above to\ngenerate your first article")
+                .font(.callout)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     // MARK: - Actions
 
     private func addURL() {
@@ -143,9 +157,11 @@ struct ArticleListView: View {
         do {
             try pipeline.enqueue(url: url, modelContext: modelContext)
             urlInput = ""
+            withAnimation { isErrorVisible = false }
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
+            withAnimation(.easeInOut(duration: 0.2)) { isErrorVisible = true }
         }
     }
 
@@ -174,46 +190,79 @@ struct ArticleRow: View {
     let article: Article
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Status indicator
-            statusDot
-                .frame(width: 8)
+        HStack(spacing: 10) {
+            // Thumbnail or status icon
+            thumbnailOrIcon
+                .frame(width: 48, height: 36)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(article.title.isEmpty ? article.videoID : article.title)
                     .font(.system(.body, weight: .medium))
                     .lineLimit(2)
 
-                if !article.channel.isEmpty {
-                    Text(article.channel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
+                HStack(spacing: 6) {
+                    if !article.channel.isEmpty {
+                        Text(article.channel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
 
-                if article.status != .done {
-                    Text(article.status.rawValue.capitalized)
-                        .font(.caption2)
-                        .foregroundStyle(article.status == .error ? .red : .orange)
+                    if article.status != .done {
+                        statusBadge
+                    }
                 }
             }
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder
-    private var statusDot: some View {
-        switch article.status {
-        case .done:
-            Circle().fill(.green).frame(width: 8, height: 8)
-        case .error:
-            Circle().fill(.red).frame(width: 8, height: 8)
-        case .pending:
-            Circle().fill(.secondary.opacity(0.4)).frame(width: 8, height: 8)
-        case .fetching, .transcribing, .generating:
-            ProgressView()
-                .controlSize(.mini)
-                .scaleEffect(0.6)
+    private var thumbnailOrIcon: some View {
+        if let thumbStr = article.thumbnailURL, let thumbURL = URL(string: thumbStr) {
+            AsyncImage(url: thumbURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fill)
+                case .failure:
+                    placeholderIcon
+                default:
+                    placeholderIcon
+                }
+            }
+        } else {
+            placeholderIcon
+        }
+    }
+
+    private var placeholderIcon: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(.controlBackgroundColor))
+            Image(systemName: "play.rectangle")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private var statusBadge: some View {
+        HStack(spacing: 3) {
+            switch article.status {
+            case .fetching, .transcribing, .generating:
+                ProgressView()
+                    .controlSize(.mini)
+                    .scaleEffect(0.5)
+            case .error:
+                Circle().fill(.red).frame(width: 6, height: 6)
+            case .pending:
+                Circle().fill(.secondary.opacity(0.4)).frame(width: 6, height: 6)
+            case .done:
+                EmptyView()
+            }
+            Text(article.status.rawValue.capitalized)
+                .font(.caption2)
+                .foregroundStyle(article.status == .error ? .red : .orange)
         }
     }
 }

@@ -267,7 +267,7 @@ final class ArticlePipeline: ObservableObject {
     }
 
     /// Split transcript by chapter timestamps (proportional word distribution).
-    private nonisolated func buildChapteredTranscript(transcript: String, chapters: [ChapterInfo]) -> String {
+    nonisolated func buildChapteredTranscript(transcript: String, chapters: [ChapterInfo]) -> String {
         let words = transcript.split(separator: " ")
         let totalWords = words.count
         let totalDuration = chapters.map(\.endTime).max() ?? 1.0
@@ -294,7 +294,7 @@ final class ArticlePipeline: ObservableObject {
     }
 
     /// Extract video ID from various YouTube URL formats.
-    private nonisolated func extractVideoID(from url: String) -> String? {
+    nonisolated func extractVideoID(from url: String) -> String? {
         if let range = url.range(of: "v=") {
             let start = range.upperBound
             let end = url[start...].firstIndex(of: "&") ?? url.endIndex

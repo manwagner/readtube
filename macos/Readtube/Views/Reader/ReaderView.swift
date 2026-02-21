@@ -11,7 +11,7 @@ struct ReaderView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Toolbar
-            HStack {
+            HStack(spacing: 12) {
                 // Theme picker
                 Picker("Theme", selection: $currentTheme) {
                     ForEach(ThemeName.allCases, id: \.self) { theme in
@@ -19,31 +19,46 @@ struct ReaderView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 400)
+                .frame(maxWidth: 320)
 
                 Spacer()
 
-                // Export buttons
+                // Export menu
                 Menu {
-                    Button("Export EPUB") { exportEPUB() }
-                    Button("Export PDF") { exportPDF() }
-                    Button("Export Markdown") { exportMarkdown() }
-                    Button("Export HTML") { exportHTML() }
+                    Section("Document") {
+                        Button { exportEPUB() } label: {
+                            Label("EPUB", systemImage: "book")
+                        }
+                        Button { exportPDF() } label: {
+                            Label("PDF", systemImage: "doc.richtext")
+                        }
+                    }
+                    Section("Source") {
+                        Button { exportMarkdown() } label: {
+                            Label("Markdown", systemImage: "text.document")
+                        }
+                        Button { exportHTML() } label: {
+                            Label("HTML", systemImage: "chevron.left.forwardslash.chevron.right")
+                        }
+                    }
                 } label: {
                     Label("Export", systemImage: "square.and.arrow.up")
                 }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
 
                 // Open in YouTube
                 if let url = URL(string: article.url) {
                     Button {
                         NSWorkspace.shared.open(url)
                     } label: {
-                        Label("YouTube", systemImage: "play.rectangle")
+                        Label("YouTube", systemImage: "play.rectangle.fill")
                     }
                 }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(Color(.windowBackgroundColor))
 
             Divider()
 
@@ -141,7 +156,6 @@ struct ReaderView: View {
         panel.nameFieldStringValue = "\(safeName(article.title)).html"
         panel.begin { response in
             if response == .OK, let url = panel.url {
-                // Wrap in full HTML document with CSS
                 let typographyCSS = Bundle.main.url(forResource: "Typography", withExtension: "css")
                     .flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
                 let fullHTML = """

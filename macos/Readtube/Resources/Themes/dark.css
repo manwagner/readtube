@@ -2,12 +2,12 @@
 body {
     font-family: Charter, "Bitstream Charter", Georgia, "Times New Roman", serif;
     font-size: 1.1em;
-    line-height: 1.4;
-    color: #e0e0e0;
+    line-height: 1.5;
+    color: #d8d8d8;
     background: #1a1a1a;
     max-width: 65ch;
     margin: 0 auto;
-    padding: 2em 1.5em;
+    padding: 2.5em 1.5em;
     text-rendering: optimizeLegibility;
     font-kerning: normal;
 }
@@ -25,40 +25,47 @@ h1, h2, h3, h4 {
     font-weight: 600;
     line-height: 1.25;
     margin-bottom: 0.5em;
-    color: #fff;
+    color: #f0f0f0;
 }
 
 h1 { font-size: 1.5em; margin-top: 0; }
-h2 { font-size: 1.2em; margin-top: 2em; }
+h2 { font-size: 1.2em; margin-top: 2.5em; }
 h3 { font-size: 1.05em; margin-top: 1.5em; }
 
 blockquote {
-    margin: 1.2em 1.5em;
+    margin: 1.5em 0;
+    padding: 0.6em 1.2em;
     font-style: italic;
-    color: #bbb;
-    border-left: 2px solid #444;
-    padding-left: 1em;
+    color: #aaa;
+    border-left: 3px solid #444;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0 2px 2px 0;
 }
 
-a { color: #6db3f2; text-decoration: none; }
+blockquote p { text-indent: 0; }
+
+a { color: #64b5f6; text-decoration: none; }
+a:hover { text-decoration: underline; }
 
 .intro {
     background: #252525;
     padding: 1em 1.2em;
-    margin-bottom: 1.5em;
-    border-radius: 2px;
+    margin-bottom: 2em;
+    border-radius: 4px;
+    border-left: 3px solid #64b5f6;
 }
 
 .intro p { margin: 0; text-indent: 0; }
 
 .watch-link {
-    margin-top: 2em;
+    margin-top: 3em;
     padding: 0.8em 1em;
     background: #252525;
     font-size: 0.88em;
-    border-radius: 2px;
+    border-radius: 4px;
+    text-align: center;
 }
-
+.watch-link a { color: #64b5f6; }
 .watch-link p { text-indent: 0; margin: 0; }
 
 code {
@@ -66,13 +73,13 @@ code {
     font-size: 0.85em;
     background: #2d2d2d;
     padding: 0.1em 0.25em;
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
-pre { background: #2d2d2d; padding: 1em; border-radius: 2px; }
+pre { background: #2d2d2d; padding: 1em; border-radius: 4px; }
 pre code { background: none; padding: 0; }
 
-hr { border: none; border-top: 1px solid #444; margin: 1.5em 0; }
+hr { border: none; border-top: 1px solid #444; margin: 2em 0; }
 
 ul, ol { margin: 0.8em 0; padding-left: 1.5em; }
 li { margin-bottom: 0.3em; text-indent: 0; }

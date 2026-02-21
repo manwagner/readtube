@@ -2,11 +2,11 @@
 body {
     font-family: Charter, "Bitstream Charter", Georgia, "Times New Roman", serif;
     font-size: 1.1em;
-    line-height: 1.4;
+    line-height: 1.5;
     color: #1a1a1a;
     max-width: 65ch;
     margin: 0 auto;
-    padding: 2em 1.5em;
+    padding: 2.5em 1.5em;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     font-kerning: normal;
@@ -38,16 +38,18 @@ h1, h2, h3, h4 {
 }
 
 h1 { font-size: 1.5em; margin-top: 0; padding-bottom: 0.3em; }
-h2 { font-size: 1.2em; margin-top: 2em; }
+h2 { font-size: 1.2em; margin-top: 2.5em; }
 h3 { font-size: 1.05em; margin-top: 1.5em; }
 h4 { font-size: 1em; margin-top: 1.2em; }
 
 blockquote {
-    margin: 1.2em 0;
-    margin-left: 1.5em;
-    margin-right: 1.5em;
+    margin: 1.5em 0;
+    padding: 0.6em 1.2em;
+    border-left: 3px solid #ccc;
     font-style: italic;
     color: #333;
+    background: rgba(0, 0, 0, 0.015);
+    border-radius: 0 2px 2px 0;
 }
 
 blockquote p { text-indent: 0; margin-bottom: 0.5em; }
@@ -62,30 +64,34 @@ a {
     text-decoration: underline;
     text-decoration-color: #999;
     text-underline-offset: 2px;
+    transition: text-decoration-color 0.2s ease;
 }
+a:hover { text-decoration-color: #333; }
 
 em { font-style: italic; }
 strong { font-weight: 600; }
 
 .intro {
-    background: #f9f9f7;
+    background: #f8f9fa;
     padding: 1em 1.2em;
-    margin-bottom: 1.5em;
+    margin-bottom: 2em;
     font-size: 0.92em;
     line-height: 1.4;
-    border-radius: 2px;
+    border-radius: 4px;
+    border-left: 3px solid #0066cc;
 }
 
 .intro p { margin: 0; text-indent: 0; }
 
 .watch-link {
-    margin-top: 2em;
+    margin-top: 3em;
     padding: 0.8em 1em;
     background: #f5f5f3;
     font-size: 0.88em;
-    border-radius: 2px;
+    border-radius: 4px;
+    text-align: center;
 }
-
+.watch-link a { color: #0066cc; }
 .watch-link p { text-indent: 0; margin: 0; }
 
 code {
@@ -93,20 +99,20 @@ code {
     font-size: 0.85em;
     background: #f5f5f5;
     padding: 0.1em 0.25em;
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 pre {
     background: #f5f5f5;
     padding: 1em;
     overflow-x: auto;
-    border-radius: 2px;
+    border-radius: 4px;
     font-size: 0.85em;
     line-height: 1.4;
 }
 
 pre code { background: none; padding: 0; }
 
-hr { border: none; border-top: 1px solid #ddd; margin: 1.5em 0; }
+hr { border: none; border-top: 1px solid #ddd; margin: 2em 0; }
 
 p { orphans: 2; widows: 2; }

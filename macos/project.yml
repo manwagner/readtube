@@ -72,5 +72,12 @@ targets:
     platform: macOS
     sources:
       - ReadtubeTests
+      - path: Readtube/Services
+      - path: Readtube/Models
     dependencies:
-      - target: Readtube
+      - package: ZIPFoundation
+      - package: swift-markdown
+        product: Markdown
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
