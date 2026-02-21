@@ -48,7 +48,11 @@ final class AppSettings {
         }
         let settings = AppSettings()
         context.insert(settings)
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("Failed to save initial settings: \(error)")
+        }
         return settings
     }
 }

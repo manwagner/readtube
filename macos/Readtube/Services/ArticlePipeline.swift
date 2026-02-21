@@ -25,6 +25,10 @@ final class ArticlePipeline: ObservableObject {
         timer = nil
     }
 
+    deinit {
+        timer?.invalidate()
+    }
+
     /// Manually enqueue a URL for processing.
     func enqueue(url: String, modelContext: ModelContext) throws {
         let videoID = extractVideoID(from: url) ?? url
@@ -164,7 +168,11 @@ final class ArticlePipeline: ObservableObject {
         article.status = .done
         article.errorMessage = nil
         article.updatedAt = Date()
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save completed article: \(error)")
+        }
     }
 
     // MARK: - Helpers
@@ -172,17 +180,25 @@ final class ArticlePipeline: ObservableObject {
     private func setStatus(_ article: Article, _ status: ArticleStatus, modelContext: ModelContext) {
         article.status = status
         article.updatedAt = Date()
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save status \(status): \(error)")
+        }
     }
 
     private func setError(_ article: Article, _ message: String, modelContext: ModelContext) {
         article.status = .error
         article.errorMessage = message
         article.updatedAt = Date()
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save error state: \(error)")
+        }
     }
 
-    private nonisolated func buildLLMService(settings: AppSettings) -> any LLMService {
+    private func buildLLMService(settings: AppSettings) -> any LLMService {
         switch settings.llmBackend {
         case .ollama:
             return OllamaService(baseURL: settings.ollamaBaseURL, model: settings.ollamaModel)

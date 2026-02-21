@@ -139,16 +139,7 @@ enum EPUBGenerator {
             """)
 
         // Create ZIP (EPUB) from the directory
-        let epubURL = tmpDir.appendingPathComponent("output.epub")
-        try fm.zipItem(at: tmpDir.appendingPathComponent("mimetype"), to: epubURL)
-
-        // ZIPFoundation's zipItem on a directory is easier — ZIP the whole OEBPS structure
-        // Actually, let's just ZIP the entire directory properly
-        try fm.removeItem(at: epubURL)
-
-        // Use a simpler approach: create the zip manually
-        let epubData = try createEPUBZip(from: tmpDir)
-        return epubData
+        return try createEPUBZip(from: tmpDir)
     }
 
     /// Create an EPUB ZIP from a directory structure.
@@ -165,8 +156,7 @@ enum EPUBGenerator {
         }
 
         // Add mimetype first (uncompressed, as required by EPUB spec)
-        let mimetypePath = directory.appendingPathComponent("mimetype")
-        try archive.addEntry(with: "mimetype", fileURL: mimetypePath, compressionMethod: .none)
+        try archive.addEntry(with: "mimetype", relativeTo: directory, compressionMethod: .none)
 
         // Add all other files
         let paths = [
@@ -181,14 +171,14 @@ enum EPUBGenerator {
         for path in paths {
             let fileURL = directory.appendingPathComponent(path)
             if fm.fileExists(atPath: fileURL.path) {
-                try archive.addEntry(with: path, fileURL: fileURL, compressionMethod: .deflate)
+                try archive.addEntry(with: path, relativeTo: directory, compressionMethod: .deflate)
             }
         }
 
         // Add cover if it exists
         let coverURL = directory.appendingPathComponent("OEBPS/cover.jpg")
         if fm.fileExists(atPath: coverURL.path) {
-            try archive.addEntry(with: "OEBPS/cover.jpg", fileURL: coverURL, compressionMethod: .deflate)
+            try archive.addEntry(with: "OEBPS/cover.jpg", relativeTo: directory, compressionMethod: .deflate)
         }
 
         return try Data(contentsOf: outputURL)
@@ -198,7 +188,10 @@ enum EPUBGenerator {
 
     private static func write(_ base: URL, _ path: String, _ content: String) throws {
         let url = base.appendingPathComponent(path)
-        try content.data(using: .utf8)!.write(to: url)
+        guard let data = content.data(using: .utf8) else {
+            throw EPUBError.encodingFailed
+        }
+        try data.write(to: url)
     }
 
     private static func escapeXML(_ string: String) -> String {
@@ -213,8 +206,14 @@ enum EPUBGenerator {
 
 enum EPUBError: LocalizedError {
     case archiveFailed
+    case encodingFailed
 
     var errorDescription: String? {
-        "Failed to create EPUB archive"
+        switch self {
+        case .archiveFailed:
+            return "Failed to create EPUB archive"
+        case .encodingFailed:
+            return "Failed to encode content as UTF-8"
+        }
     }
 }

@@ -104,6 +104,10 @@ struct SettingsView: View {
     }
 
     private func save() {
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save settings: \(error)")
+        }
     }
 }

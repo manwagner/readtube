@@ -148,7 +148,11 @@ struct SourcesView: View {
 
         let source = Source(url: url, sourceType: newType, name: newName.trimmingCharacters(in: .whitespaces))
         modelContext.insert(source)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save source: \(error)")
+        }
 
         newURL = ""
         newName = ""

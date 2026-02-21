@@ -110,7 +110,7 @@ struct DashboardView: View {
             try pipeline.enqueue(url: url, modelContext: modelContext)
             urlInput = ""
         } catch {
-            // Silently handle duplicates
+            print("Failed to enqueue URL: \(error)")
         }
     }
 

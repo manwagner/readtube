@@ -32,7 +32,11 @@ enum OPMLImporter {
             count += 1
         }
 
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("Failed to save imported sources: \(error)")
+        }
         return count
     }
 }
