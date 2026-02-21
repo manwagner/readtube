@@ -6,6 +6,7 @@ struct ReaderView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var currentTheme: ThemeName = .default
     @State private var coordinator: ReaderWebView.Coordinator?
+    @State private var exportError: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -58,9 +59,21 @@ struct ReaderView: View {
         }
         .navigationTitle(article.title)
         .onAppear {
-            // Load saved theme from settings
             let settings = AppSettings.getOrCreate(context: modelContext)
             currentTheme = settings.theme
+        }
+        .onChange(of: currentTheme) {
+            let settings = AppSettings.getOrCreate(context: modelContext)
+            settings.theme = currentTheme
+            do { try modelContext.save() } catch { print("Failed to save theme: \(error)") }
+        }
+        .alert("Export Failed", isPresented: Binding(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK") { exportError = nil }
+        } message: {
+            Text(exportError ?? "")
         }
     }
 
@@ -84,7 +97,7 @@ struct ReaderView: View {
                     )
                     try data.write(to: url)
                 } catch {
-                    print("EPUB export failed: \(error)")
+                    exportError = "EPUB: \(error.localizedDescription)"
                 }
             }
         }
@@ -98,14 +111,14 @@ struct ReaderView: View {
             guard response == .OK, let url = panel.url else { return }
             Task { @MainActor in
                 guard let coordinator = coordinator else {
-                    print("PDF export failed: no webView coordinator")
+                    exportError = "PDF: WebView not ready"
                     return
                 }
                 do {
                     let data = try await coordinator.exportPDF()
                     try data.write(to: url)
                 } catch {
-                    print("PDF export failed: \(error)")
+                    exportError = "PDF: \(error.localizedDescription)"
                 }
             }
         }

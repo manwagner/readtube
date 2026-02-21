@@ -8,6 +8,7 @@ final class Source {
     var name: String
     var autoFetch: Bool
     var createdAt: Date
+    var lastFetchedAt: Date?
     @Relationship(deleteRule: .nullify, inverse: \Article.source) var articles: [Article]
 
     var sourceType: SourceType {

@@ -138,6 +138,7 @@ struct ClaudeService: LLMService {
                     request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
                     request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
                     request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                    request.timeoutInterval = 300
 
                     let (bytes, response) = try await URLSession.shared.bytes(for: request)
                     try checkHTTPResponse(response)
@@ -232,6 +233,7 @@ struct OpenAIService: LLMService {
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
                     request.httpBody = try JSONSerialization.data(withJSONObject: body)
+                    request.timeoutInterval = 300
 
                     let (bytes, response) = try await URLSession.shared.bytes(for: request)
                     try checkHTTPResponse(response)
@@ -288,12 +290,13 @@ private func postJSON(url: String, body: [String: Any], timeout: TimeInterval = 
     return data
 }
 
-private func streamRequest(url: String, body: [String: Any]) async throws -> (URLSession.AsyncBytes, URLResponse) {
+private func streamRequest(url: String, body: [String: Any], timeout: TimeInterval = 300) async throws -> (URLSession.AsyncBytes, URLResponse) {
     guard let parsedURL = URL(string: url) else { throw LLMError.invalidURL(url) }
     var request = URLRequest(url: parsedURL)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = try JSONSerialization.data(withJSONObject: body)
+    request.timeoutInterval = timeout
 
     return try await URLSession.shared.bytes(for: request)
 }

@@ -9,6 +9,7 @@ struct DashboardView: View {
     @State private var urlInput = ""
     @State private var searchText = ""
     @State private var statusFilter: ArticleStatus?
+    @State private var errorMessage: String?
 
     @Query(sort: \Article.createdAt, order: .reverse) private var allArticles: [Article]
 
@@ -49,6 +50,21 @@ struct DashboardView: View {
                     .disabled(urlInput.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             .padding()
+
+            if let error = errorMessage {
+                HStack {
+                    Image(systemName: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                    Spacer()
+                    Button("Dismiss") { errorMessage = nil }
+                        .font(.caption)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 4)
+            }
 
             // Search and filter bar
             HStack {
@@ -109,8 +125,9 @@ struct DashboardView: View {
         do {
             try pipeline.enqueue(url: url, modelContext: modelContext)
             urlInput = ""
+            errorMessage = nil
         } catch {
-            print("Failed to enqueue URL: \(error)")
+            errorMessage = error.localizedDescription
         }
     }
 

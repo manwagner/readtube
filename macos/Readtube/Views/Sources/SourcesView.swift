@@ -75,7 +75,10 @@ struct SourcesView: View {
 
                             Toggle("Auto-fetch", isOn: Binding(
                                 get: { source.autoFetch },
-                                set: { source.autoFetch = $0 }
+                                set: {
+                                    source.autoFetch = $0
+                                    do { try modelContext.save() } catch { print("Failed to save toggle: \(error)") }
+                                }
                             ))
                             .toggleStyle(.switch)
                             .labelsHidden()

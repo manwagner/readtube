@@ -218,13 +218,16 @@ actor YTDLPService {
         process.standardError = stderr
 
         try process.run()
+
+        // Read output before waitUntilExit to avoid pipe buffer deadlock
+        let outputData = stdout.fileHandleForReading.readDataToEndOfFile()
+        let errorData = stderr.fileHandleForReading.readDataToEndOfFile()
+
         process.waitUntilExit()
 
-        let outputData = stdout.fileHandleForReading.readDataToEndOfFile()
         let output = String(data: outputData, encoding: .utf8) ?? ""
 
         if process.terminationStatus != 0 {
-            let errorData = stderr.fileHandleForReading.readDataToEndOfFile()
             let errorMsg = String(data: errorData, encoding: .utf8) ?? "Unknown error"
             throw YTDLPError.processError(process.terminationStatus, errorMsg)
         }

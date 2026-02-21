@@ -16,6 +16,7 @@ final class ArticlePipeline: ObservableObject {
         timer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.pollPending(modelContext: modelContext)
+                self?.pollAutoFetchSources(modelContext: modelContext)
             }
         }
     }
@@ -73,6 +74,62 @@ final class ArticlePipeline: ObservableObject {
             await processArticle(videoID: videoID, modelContext: modelContext)
             activeTasks.remove(videoID)
             isProcessing = !activeTasks.isEmpty
+        }
+    }
+
+    // MARK: - Auto-fetch sources
+
+    private var lastAutoFetchCheck = Date.distantPast
+
+    private func pollAutoFetchSources(modelContext: ModelContext) {
+        // Only check every 60 seconds to avoid hammering the DB
+        guard Date().timeIntervalSince(lastAutoFetchCheck) >= 60 else { return }
+        lastAutoFetchCheck = Date()
+
+        let settings = AppSettings.getOrCreate(context: modelContext)
+        let intervalMinutes = settings.autoFetchIntervalMinutes
+        guard intervalMinutes > 0 else { return }
+
+        let interval = TimeInterval(intervalMinutes * 60)
+        let descriptor = FetchDescriptor<Source>(
+            predicate: #Predicate<Source> { $0.autoFetch == true }
+        )
+        guard let sources = try? modelContext.fetch(descriptor) else { return }
+
+        for source in sources {
+            let lastFetch = source.lastFetchedAt ?? .distantPast
+            guard Date().timeIntervalSince(lastFetch) >= interval else { continue }
+
+            source.lastFetchedAt = Date()
+            do { try modelContext.save() } catch { print("Failed to save lastFetchedAt: \(error)") }
+
+            Task { @MainActor in
+                await fetchSource(source, modelContext: modelContext)
+            }
+        }
+    }
+
+    private func fetchSource(_ source: Source, modelContext: ModelContext) async {
+        do {
+            let urls: [String]
+            switch source.sourceType {
+            case .playlist:
+                urls = try await YTDLPService.shared.getPlaylistVideoURLs(url: source.url)
+            case .channel:
+                if let info = try await YTDLPService.shared.getLatestFromChannel(handle: source.url) {
+                    urls = [info.url]
+                } else {
+                    urls = []
+                }
+            case .video:
+                urls = [source.url]
+            }
+
+            for url in urls {
+                try enqueue(url: url, modelContext: modelContext)
+            }
+        } catch {
+            print("Auto-fetch failed for \(source.url): \(error)")
         }
     }
 
