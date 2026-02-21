@@ -31,31 +31,31 @@ When the user wants to create an ebook from YouTube videos, follow this workflow
 
 ```bash
 # Single video
-python fetch_transcript.py "https://www.youtube.com/watch?v=VIDEO_ID"
+python -m readtube "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # Multiple videos
-python fetch_transcript.py "URL1" "URL2" "URL3"
+python -m readtube "URL1" "URL2" "URL3"
 
 # Playlist (all videos)
-python fetch_transcript.py "https://www.youtube.com/playlist?list=PLxxx"
+python -m readtube "https://www.youtube.com/playlist?list=PLxxx"
 
 # Playlist with limit
-python fetch_transcript.py "https://www.youtube.com/playlist?list=PLxxx" --max 5
+python -m readtube "https://www.youtube.com/playlist?list=PLxxx" --max 5
 
 # From configured channels
-python fetch_transcript.py --channels
+python -m readtube --channels
 
 # With specific language
-python fetch_transcript.py "URL" --lang es
+python -m readtube "URL" --lang es
 
 # List available languages
-python fetch_transcript.py "URL" --list-languages
+python -m readtube "URL" --list-languages
 
 # Summary mode (short 2-3 paragraph summary)
-python fetch_transcript.py "URL" --summary
+python -m readtube "URL" --summary
 
 # Custom output directory
-python fetch_transcript.py "URL" --output-dir ./ebooks
+python -m readtube "URL" --output-dir ./ebooks
 ```
 
 ### Step 2: Write the Article
@@ -79,16 +79,16 @@ Using the transcript output, write a magazine-style article following these guid
 If Claude Code isn't available, you can draft locally:
 
 ```bash
-python fetch_transcript.py "URL" --output-json video.json
-python write_article.py video.json --backend claude --output-dir ./drafts
+python -m readtube "URL" --output-json video.json
+python -m readtube.article video.json --backend claude --output-dir ./drafts
 # or use llama.cpp
-python write_article.py video.json --backend llama-cpp --model /path/to/model.gguf --output-dir ./drafts
+python -m readtube.article video.json --backend llama-cpp --model /path/to/model.gguf --output-dir ./drafts
 ```
 
 ### Step 3: Create the Ebook
 
 ```python
-from create_epub import create_ebook
+from readtube.ebook import create_ebook
 
 articles = [{
     "title": "Original Video Title",
@@ -152,10 +152,13 @@ make test-e2e    # Run end-to-end tests
 
 ```
 readtube/
-├── fetch_transcript.py  # Fetch video info + transcript
-├── create_epub.py       # Create EPUB/PDF/HTML from articles
-├── get_videos.py        # Video fetching (yt-dlp)
-├── get_transcripts.py   # Transcript extraction
+├── readtube/
+│   ├── cli.py           # CLI entry point (python -m readtube)
+│   ├── ebook.py         # Create EPUB/PDF/HTML from articles
+│   ├── videos.py        # Video fetching (yt-dlp)
+│   ├── transcripts.py   # Transcript extraction
+│   ├── llm.py           # LLM backends for article generation
+│   └── web/             # Web UI subpackage
 ├── tests/               # Test suite
 ├── Makefile             # Common commands
 └── SKILL.md             # This file
@@ -163,7 +166,7 @@ readtube/
 
 ## Configuring Channels
 
-Edit `CHANNELS` in `get_videos.py`:
+Edit `CHANNELS` in `readtube/videos.py`:
 
 ```python
 CHANNELS = [

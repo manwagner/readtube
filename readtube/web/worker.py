@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 
 import markdown
 
-import web_db as db
+from . import db
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ def _dispatch(job: Dict[str, Any]) -> None:
         if job.get("article_id"):
             # find the video_id for this article
             try:
-                from web_db import _get_conn
+                from .db import _get_conn
                 conn = _get_conn()
                 cur = conn.cursor()
                 cur.execute("SELECT video_id FROM articles WHERE id = ?", (job["article_id"],))
@@ -141,10 +141,10 @@ def _dispatch(job: Dict[str, Any]) -> None:
 
 def _do_fetch_video(job: Dict[str, Any]) -> None:
     """Full pipeline: info → transcript → article → HTML."""
-    from get_videos import get_video_info
-    from get_transcripts import get_transcript
-    from llm import generate_article
-    from errors import format_error_for_user
+    from ..videos import get_video_info
+    from ..transcripts import get_transcript
+    from ..llm import generate_article
+    from ..errors import format_error_for_user
 
     article_id = job["article_id"]
 
@@ -224,7 +224,7 @@ def _do_fetch_video(job: Dict[str, Any]) -> None:
     try:
         chapters = info.get("chapters", [])
         if chapters:
-            from chapters import split_transcript_by_chapters
+            from ..chapters import split_transcript_by_chapters
             chaptered = split_transcript_by_chapters(transcript, chapters)
             if chaptered.has_chapters and chaptered.chapters:
                 parts = []
@@ -286,8 +286,8 @@ def _do_fetch_video(job: Dict[str, Any]) -> None:
 
 def _do_fetch_source(job: Dict[str, Any]) -> None:
     """Resolve a source (playlist/channel) into individual video jobs."""
-    from get_videos import get_video_info, get_videos_from_playlist, get_latest_video_from_channel, is_playlist_url
-    from errors import format_error_for_user
+    from ..videos import get_video_info, get_videos_from_playlist, get_latest_video_from_channel, is_playlist_url
+    from ..errors import format_error_for_user
 
     source_id = job["source_id"]
 

@@ -21,7 +21,7 @@ class TestConfig:
 
     def test_typography_config_defaults(self):
         """Test TypographyConfig has sensible defaults."""
-        from config import TypographyConfig
+        from readtube.config import TypographyConfig
 
         config = TypographyConfig()
         assert "Charter" in config.font_family
@@ -30,7 +30,7 @@ class TestConfig:
 
     def test_output_config_defaults(self):
         """Test OutputConfig has sensible defaults."""
-        from config import OutputConfig
+        from readtube.config import OutputConfig
 
         config = OutputConfig()
         assert config.default_format == "epub"
@@ -39,7 +39,7 @@ class TestConfig:
 
     def test_fetch_config_defaults(self):
         """Test FetchConfig has sensible defaults."""
-        from config import FetchConfig
+        from readtube.config import FetchConfig
 
         config = FetchConfig()
         assert config.cache_enabled is True
@@ -48,7 +48,7 @@ class TestConfig:
 
     def test_config_to_dict_and_back(self):
         """Test Config serialization round-trip."""
-        from config import Config
+        from readtube.config import Config
 
         config = Config()
         data = config.to_dict()
@@ -64,7 +64,7 @@ class TestConfig:
 
     def test_config_save_and_load(self, temp_dir):
         """Test Config save and load from file."""
-        from config import Config
+        from readtube.config import Config
 
         config = Config()
         config.channels = ["https://youtube.com/@test"]
@@ -79,7 +79,7 @@ class TestConfig:
 
     def test_batch_job_creation(self):
         """Test BatchJob dataclass."""
-        from config import BatchJob
+        from readtube.config import BatchJob
 
         job = BatchJob(
             url="https://youtube.com/watch?v=test",
@@ -93,7 +93,7 @@ class TestConfig:
 
     def test_batch_config_from_dict(self):
         """Test BatchConfig creation from dict."""
-        from config import BatchConfig
+        from readtube.config import BatchConfig
 
         data = {
             "output_dir": "./ebooks",
@@ -114,7 +114,7 @@ class TestConfig:
 
     def test_batch_config_load_json(self, temp_dir):
         """Test BatchConfig loading from JSON file."""
-        from config import BatchConfig
+        from readtube.config import BatchConfig
 
         config_data = {
             "output_dir": "./out",
@@ -131,7 +131,7 @@ class TestConfig:
 
     def test_batch_config_load_yaml(self, temp_dir):
         """Test BatchConfig loading from YAML file."""
-        from config import BatchConfig
+        from readtube.config import BatchConfig
         pytest.importorskip("yaml")
 
         yaml_content = """
@@ -151,7 +151,7 @@ jobs:
 
     def test_get_config_singleton(self):
         """Test get_config returns singleton."""
-        from config import get_config, set_config, Config
+        from readtube.config import get_config, set_config, Config
 
         # Reset
         set_config(None)
@@ -168,7 +168,7 @@ class TestThemes:
 
     def test_get_default_theme(self):
         """Test getting default theme."""
-        from themes import get_theme
+        from readtube.themes import get_theme
 
         theme = get_theme("default")
         assert theme.name == "default"
@@ -177,7 +177,7 @@ class TestThemes:
 
     def test_get_dark_theme(self):
         """Test getting dark theme."""
-        from themes import get_theme
+        from readtube.themes import get_theme
 
         theme = get_theme("dark")
         assert theme.name == "dark"
@@ -185,7 +185,7 @@ class TestThemes:
 
     def test_get_modern_theme(self):
         """Test getting modern theme."""
-        from themes import get_theme
+        from readtube.themes import get_theme
 
         theme = get_theme("modern")
         assert theme.name == "modern"
@@ -193,7 +193,7 @@ class TestThemes:
 
     def test_get_minimal_theme(self):
         """Test getting minimal theme."""
-        from themes import get_theme
+        from readtube.themes import get_theme
 
         theme = get_theme("minimal")
         assert theme.name == "minimal"
@@ -201,7 +201,7 @@ class TestThemes:
 
     def test_get_invalid_theme(self):
         """Test getting non-existent theme raises error."""
-        from themes import get_theme
+        from readtube.themes import get_theme
 
         with pytest.raises(ValueError) as exc:
             get_theme("nonexistent")
@@ -209,7 +209,7 @@ class TestThemes:
 
     def test_list_themes(self):
         """Test listing all themes."""
-        from themes import list_themes
+        from readtube.themes import list_themes
 
         themes = list_themes()
         assert "default" in themes
@@ -219,7 +219,7 @@ class TestThemes:
 
     def test_register_custom_theme(self):
         """Test registering a custom theme."""
-        from themes import Theme, register_theme, get_theme, THEMES
+        from readtube.themes import Theme, register_theme, get_theme, THEMES
 
         custom = Theme(
             name="custom_test",
@@ -238,7 +238,7 @@ class TestThemes:
 
     def test_load_custom_css(self, temp_dir):
         """Test loading custom CSS file as theme."""
-        from themes import load_custom_css
+        from readtube.themes import load_custom_css
 
         css_content = "body { font-size: 20px; }"
         css_path = Path(temp_dir) / "custom.css"
@@ -255,7 +255,7 @@ class TestBatch:
 
     def test_estimate_reading_time(self):
         """Test reading time estimation."""
-        from batch import estimate_reading_time
+        from readtube.batch import estimate_reading_time
 
         # 200 words = 1 minute at default 200 WPM
         text = " ".join(["word"] * 200)
@@ -270,7 +270,7 @@ class TestBatch:
 
     def test_estimate_reading_time_custom_wpm(self):
         """Test reading time with custom WPM."""
-        from batch import estimate_reading_time
+        from readtube.batch import estimate_reading_time
 
         text = " ".join(["word"] * 100)
         assert estimate_reading_time(text, wpm=100) == 1
@@ -278,7 +278,7 @@ class TestBatch:
 
     def test_retry_with_backoff_success(self):
         """Test retry succeeds on first try."""
-        from batch import retry_with_backoff
+        from readtube.batch import retry_with_backoff
 
         call_count = 0
 
@@ -293,7 +293,7 @@ class TestBatch:
 
     def test_retry_with_backoff_eventual_success(self):
         """Test retry succeeds after failures."""
-        from batch import retry_with_backoff
+        from readtube.batch import retry_with_backoff
 
         call_count = 0
 
@@ -310,7 +310,7 @@ class TestBatch:
 
     def test_retry_with_backoff_all_failures(self):
         """Test retry raises after max failures."""
-        from batch import retry_with_backoff
+        from readtube.batch import retry_with_backoff
 
         def always_fail():
             raise Exception("Always fails")
@@ -320,7 +320,7 @@ class TestBatch:
 
     def test_progress_bar_fallback(self):
         """Test progress bar works without tqdm."""
-        from batch import progress_bar
+        from readtube.batch import progress_bar
 
         items = [1, 2, 3]
         result = list(progress_bar(items, desc="Test"))
@@ -352,7 +352,7 @@ class TestRSS:
 
     def test_generate_rss_feed(self, sample_articles):
         """Test RSS feed generation."""
-        from rss import generate_rss_feed
+        from readtube.rss import generate_rss_feed
 
         xml = generate_rss_feed(sample_articles, title="Test Feed")
 
@@ -364,7 +364,7 @@ class TestRSS:
 
     def test_generate_rss_feed_with_output(self, sample_articles, temp_dir):
         """Test RSS feed generation with file output."""
-        from rss import generate_rss_feed
+        from readtube.rss import generate_rss_feed
 
         output_path = Path(temp_dir) / "feed.xml"
         xml = generate_rss_feed(sample_articles, output_path=str(output_path))
@@ -376,7 +376,7 @@ class TestRSS:
 
     def test_generate_atom_feed(self, sample_articles):
         """Test Atom feed generation."""
-        from rss import generate_atom_feed
+        from readtube.rss import generate_atom_feed
 
         xml = generate_atom_feed(sample_articles, title="Test Feed")
 
@@ -387,7 +387,7 @@ class TestRSS:
 
     def test_generate_atom_feed_with_output(self, sample_articles, temp_dir):
         """Test Atom feed generation with file output."""
-        from rss import generate_atom_feed
+        from readtube.rss import generate_atom_feed
 
         output_path = Path(temp_dir) / "feed.atom"
         xml = generate_atom_feed(sample_articles, output_path=str(output_path))
@@ -396,7 +396,7 @@ class TestRSS:
 
     def test_rss_feed_handles_thumbnails(self):
         """Test RSS feed includes thumbnails as enclosures."""
-        from rss import generate_rss_feed
+        from readtube.rss import generate_rss_feed
 
         articles = [{
             "title": "Test",
@@ -416,7 +416,7 @@ class TestTTS:
 
     def test_preprocess_text_removes_markdown_headers(self):
         """Test markdown header removal."""
-        from tts import preprocess_text
+        from readtube.tts import preprocess_text
 
         text = "# Heading\n\nParagraph"
         result = preprocess_text(text)
@@ -425,7 +425,7 @@ class TestTTS:
 
     def test_preprocess_text_removes_emphasis(self):
         """Test markdown emphasis removal."""
-        from tts import preprocess_text
+        from readtube.tts import preprocess_text
 
         text = "This is **bold** and *italic* text"
         result = preprocess_text(text)
@@ -436,7 +436,7 @@ class TestTTS:
 
     def test_preprocess_text_removes_links(self):
         """Test markdown link removal."""
-        from tts import preprocess_text
+        from readtube.tts import preprocess_text
 
         text = "Check out [this link](https://example.com) for more"
         result = preprocess_text(text)
@@ -446,7 +446,7 @@ class TestTTS:
 
     def test_preprocess_text_removes_code_blocks(self):
         """Test code block removal."""
-        from tts import preprocess_text
+        from readtube.tts import preprocess_text
 
         text = "Here's code:\n```python\nprint('hello')\n```\nDone"
         result = preprocess_text(text)
@@ -455,7 +455,7 @@ class TestTTS:
 
     def test_preprocess_text_expands_abbreviations(self):
         """Test abbreviation expansion."""
-        from tts import preprocess_text
+        from readtube.tts import preprocess_text
 
         text = "e.g. this is an example i.e. a test"
         result = preprocess_text(text)
@@ -464,7 +464,7 @@ class TestTTS:
 
     def test_preprocess_text_removes_bullets(self):
         """Test bullet point removal."""
-        from tts import preprocess_text
+        from readtube.tts import preprocess_text
 
         text = "List:\n- Item 1\n* Item 2\n+ Item 3"
         result = preprocess_text(text)
@@ -474,7 +474,7 @@ class TestTTS:
 
     def test_get_available_backends(self):
         """Test getting available TTS backends."""
-        from tts import get_available_backends, BACKENDS
+        from readtube.tts import get_available_backends, BACKENDS
 
         available = get_available_backends()
         assert isinstance(available, list)
@@ -484,7 +484,7 @@ class TestTTS:
 
     def test_tts_backend_interface(self):
         """Test TTS backend abstract interface."""
-        from tts import TTSBackend
+        from readtube.tts import TTSBackend
 
         # Ensure abstract methods are defined
         assert hasattr(TTSBackend, 'synthesize')
@@ -496,7 +496,7 @@ class TestIntegrations:
 
     def test_readwise_client_requires_token(self):
         """Test ReadwiseClient requires token."""
-        from integrations import ReadwiseClient
+        from readtube.integrations import ReadwiseClient
 
         # Clear any existing env var
         old_token = os.environ.pop("READWISE_TOKEN", None)
@@ -511,14 +511,14 @@ class TestIntegrations:
 
     def test_readwise_client_accepts_token_param(self):
         """Test ReadwiseClient accepts token parameter."""
-        from integrations import ReadwiseClient
+        from readtube.integrations import ReadwiseClient
 
         client = ReadwiseClient(token="test_token")
         assert client.token == "test_token"
 
     def test_readwise_client_uses_env_var(self):
         """Test ReadwiseClient uses environment variable."""
-        from integrations import ReadwiseClient
+        from readtube.integrations import ReadwiseClient
 
         old_token = os.environ.get("READWISE_TOKEN")
         os.environ["READWISE_TOKEN"] = "env_token"
@@ -534,29 +534,29 @@ class TestIntegrations:
 
     def test_readwise_api_base_url(self):
         """Test ReadwiseClient has correct API base."""
-        from integrations import ReadwiseClient
+        from readtube.integrations import ReadwiseClient
 
         assert ReadwiseClient.API_BASE == "https://readwise.io/api/v2"
 
     def test_send_to_readwise_failure_returns_false(self, mocker):
         """Test send_to_readwise returns False on failure."""
-        from integrations import send_to_readwise
+        from readtube.integrations import send_to_readwise
 
-        mocker.patch('integrations.ReadwiseClient', side_effect=Exception("Test error"))
+        mocker.patch('readtube.integrations.ReadwiseClient', side_effect=Exception("Test error"))
 
         result = send_to_readwise({"title": "Test", "article": "Content"})
         assert result is False
 
     def test_pocket_client_not_implemented(self):
         """Test PocketClient raises NotImplementedError."""
-        from integrations import PocketClient
+        from readtube.integrations import PocketClient
 
         with pytest.raises(NotImplementedError):
             PocketClient("key", "token")
 
     def test_instapaper_client_not_implemented(self):
         """Test InstapaperClient raises NotImplementedError."""
-        from integrations import InstapaperClient
+        from readtube.integrations import InstapaperClient
 
         with pytest.raises(NotImplementedError):
             InstapaperClient("user", "pass")
@@ -575,7 +575,7 @@ class TestScheduler:
 
     def test_fetch_history_init(self, tmp_path):
         """Test FetchHistory initialization."""
-        from scheduler import FetchHistory
+        from readtube.scheduler import FetchHistory
 
         history_path = tmp_path / "history.json"
         history = FetchHistory(path=history_path)
@@ -585,7 +585,7 @@ class TestScheduler:
 
     def test_fetch_history_mark_fetched(self, tmp_path):
         """Test marking videos as fetched."""
-        from scheduler import FetchHistory
+        from readtube.scheduler import FetchHistory
 
         history = FetchHistory(path=tmp_path / "history.json")
         history.mark_fetched('video123', {'title': 'Test Video'})
@@ -595,7 +595,7 @@ class TestScheduler:
 
     def test_fetch_history_persistence(self, tmp_path):
         """Test history is persisted to disk."""
-        from scheduler import FetchHistory
+        from readtube.scheduler import FetchHistory
 
         history_path = tmp_path / "history.json"
         history1 = FetchHistory(path=history_path)
@@ -607,7 +607,7 @@ class TestScheduler:
 
     def test_fetch_history_last_run(self, tmp_path):
         """Test last run tracking."""
-        from scheduler import FetchHistory
+        from readtube.scheduler import FetchHistory
 
         history = FetchHistory(path=tmp_path / "history.json")
         assert history.get_last_run() is None
@@ -618,7 +618,7 @@ class TestScheduler:
 
     def test_fetch_history_stats(self, tmp_path):
         """Test fetch statistics."""
-        from scheduler import FetchHistory
+        from readtube.scheduler import FetchHistory
 
         history = FetchHistory(path=tmp_path / "history.json")
         history.mark_fetched('v1')
@@ -631,7 +631,7 @@ class TestScheduler:
 
     def test_scheduler_init(self, tmp_path):
         """Test Scheduler initialization."""
-        from scheduler import Scheduler
+        from readtube.scheduler import Scheduler
 
         config_path = tmp_path / "config.yaml"
         config_path.write_text("jobs: []")
@@ -641,7 +641,7 @@ class TestScheduler:
 
     def test_create_systemd_service(self, tmp_path):
         """Test systemd service generation."""
-        from scheduler import create_systemd_service
+        from readtube.scheduler import create_systemd_service
 
         config_path = str(tmp_path / "config.yaml")
         service = create_systemd_service(config_path, interval=3600)
@@ -654,7 +654,7 @@ class TestScheduler:
 
     def test_create_launchd_plist(self, tmp_path):
         """Test launchd plist generation."""
-        from scheduler import create_launchd_plist
+        from readtube.scheduler import create_launchd_plist
 
         config_path = str(tmp_path / "config.yaml")
         plist = create_launchd_plist(config_path, interval=1800)
@@ -670,14 +670,14 @@ class TestAsyncFetch:
 
     def test_imports(self):
         """Test async_fetch module imports."""
-        from async_fetch import fetch_videos_async, fetch_video_async
+        from readtube.async_fetch import fetch_videos_async, fetch_video_async
         assert callable(fetch_videos_async)
         assert callable(fetch_video_async)
 
     def test_fetch_videos_async_empty_list(self):
         """Test async fetch with empty URL list returns empty list."""
         import asyncio
-        from async_fetch import fetch_videos_async
+        from readtube.async_fetch import fetch_videos_async
 
         result = asyncio.run(fetch_videos_async([]))
         assert result == []
@@ -688,7 +688,7 @@ class TestWriteArticle:
 
     def test_load_video_data(self, tmp_path):
         """Test loading video data from JSON file."""
-        from write_article import load_video_data
+        from readtube.article import load_video_data
 
         payload = {"title": "Test", "transcript": "Text", "channel": "Ch"}
         path = tmp_path / "video.json"
@@ -700,14 +700,14 @@ class TestWriteArticle:
 
     def test_load_video_data_missing_file(self):
         """Test loading from non-existent file returns None."""
-        from write_article import load_video_data
+        from readtube.article import load_video_data
 
         result = load_video_data("/nonexistent/path.json")
         assert result is None
 
     def test_generate_prompt_file(self, tmp_path):
         """Test prompt file generation."""
-        from write_article import generate_prompt_file
+        from readtube.article import generate_prompt_file
 
         video_data = {
             "title": "Test Video",
@@ -730,7 +730,7 @@ class TestLLM:
 
     def test_imports(self):
         """Test llm module imports."""
-        from llm import (
+        from readtube.llm import (
             generate_article,
             get_available_backends,
             get_backend,
@@ -743,7 +743,7 @@ class TestLLM:
 
     def test_backends_registry(self):
         """Test that backend registry contains expected backends."""
-        from llm import BACKENDS
+        from readtube.llm import BACKENDS
 
         assert "llama-cpp" in BACKENDS
         assert "ollama" in BACKENDS
@@ -751,21 +751,21 @@ class TestLLM:
 
     def test_get_available_backends(self):
         """Test listing available backends."""
-        from llm import get_available_backends
+        from readtube.llm import get_available_backends
 
         backends = get_available_backends()
         assert isinstance(backends, list)
 
     def test_get_backend_invalid(self):
         """Test getting invalid backend returns None."""
-        from llm import get_backend
+        from readtube.llm import get_backend
 
         result = get_backend("nonexistent-backend")
         assert result is None
 
     def test_article_prompt_template(self):
         """Test article prompt template has required placeholders."""
-        from llm import ARTICLE_PROMPT_TEMPLATE
+        from readtube.llm import ARTICLE_PROMPT_TEMPLATE
 
         assert "{title}" in ARTICLE_PROMPT_TEMPLATE
         assert "{channel}" in ARTICLE_PROMPT_TEMPLATE
@@ -779,7 +779,7 @@ class TestImages:
 
     def test_imports(self):
         """Test images module imports."""
-        from images import (
+        from readtube.images import (
             get_video_thumbnails,
             get_best_thumbnail,
             extract_frames,
@@ -792,14 +792,14 @@ class TestImages:
 
     def test_get_best_thumbnail_invalid_url(self):
         """Test get_best_thumbnail with invalid URL returns None."""
-        from images import get_best_thumbnail
+        from readtube.images import get_best_thumbnail
 
         result = get_best_thumbnail("https://invalid-url.example.com/video")
         assert result is None
 
     def test_get_chapter_thumbnails_invalid_url(self):
         """Test get_chapter_thumbnails with invalid URL."""
-        from images import get_chapter_thumbnails
+        from readtube.images import get_chapter_thumbnails
 
         result = get_chapter_thumbnails("https://invalid-url.example.com/video")
         # Should return empty dict or handle error gracefully
@@ -811,7 +811,7 @@ class TestTranslate:
 
     def test_imports(self):
         """Test translate module imports."""
-        from translate import (
+        from readtube.translate import (
             translate_text,
             translate_transcript,
             get_available_backends,
@@ -825,7 +825,7 @@ class TestTranslate:
 
     def test_get_available_backends(self):
         """Test listing available translation backends."""
-        from translate import get_available_backends
+        from readtube.translate import get_available_backends
 
         backends = get_available_backends()
         assert isinstance(backends, list)
@@ -833,13 +833,13 @@ class TestTranslate:
 
     def test_backends_registry(self):
         """Test that backend registry contains expected backends."""
-        from translate import BACKENDS
+        from readtube.translate import BACKENDS
 
         assert 'google' in BACKENDS or 'libre' in BACKENDS or 'deepl' in BACKENDS
 
     def test_translation_backend_interface(self):
         """Test TranslationBackend base class interface."""
-        from translate import TranslationBackend
+        from readtube.translate import TranslationBackend
 
         # Verify it's an abstract class with required methods
         import inspect
@@ -850,7 +850,7 @@ class TestTranslate:
 
     def test_translate_text_no_backend(self):
         """Test translate_text returns None when no backend available."""
-        from translate import translate_text
+        from readtube.translate import translate_text
 
         # With an invalid backend, should return None
         result = translate_text("Hello", target_lang="es", backend="nonexistent")
@@ -858,7 +858,7 @@ class TestTranslate:
 
     def test_libre_translate_backend_exists(self):
         """Test LibreTranslate backend class exists."""
-        from translate import BACKENDS
+        from readtube.translate import BACKENDS
 
         if 'libre' in BACKENDS:
             backend_class = BACKENDS['libre']
@@ -873,7 +873,7 @@ class TestCreateEpubSecurity:
 
     def test_html_escaping(self):
         """Test that HTML content is properly escaped."""
-        from create_epub import _escape_html
+        from readtube.ebook import _escape_html
 
         dangerous = '<script>alert("xss")</script>'
         safe = _escape_html(dangerous)
@@ -883,7 +883,7 @@ class TestCreateEpubSecurity:
 
     def test_html_escaping_attributes(self):
         """Test escaping of HTML attributes."""
-        from create_epub import _escape_html
+        from readtube.ebook import _escape_html
 
         dangerous = '"><img src=x onerror=alert(1)>'
         safe = _escape_html(dangerous)
@@ -892,7 +892,7 @@ class TestCreateEpubSecurity:
 
     def test_epub_with_malicious_title(self, tmp_path):
         """Test EPUB creation with potentially malicious title."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [{
             'title': '<script>alert("xss")</script>',
@@ -913,29 +913,29 @@ class TestGetVideos:
 
     def test_is_playlist_url_with_playlist(self):
         """Test playlist URL detection."""
-        from get_videos import is_playlist_url
+        from readtube.videos import is_playlist_url
 
         assert is_playlist_url("https://youtube.com/playlist?list=PLabc123")
         assert is_playlist_url("https://youtube.com/watch?v=xyz&list=PLabc123")
 
     def test_is_playlist_url_with_video(self):
         """Test non-playlist URL detection."""
-        from get_videos import is_playlist_url
+        from readtube.videos import is_playlist_url
 
         assert not is_playlist_url("https://youtube.com/watch?v=abc123")
         assert not is_playlist_url("https://youtu.be/abc123")
 
     def test_get_video_info_invalid_url(self):
         """Test get_video_info with invalid URL raises NetworkError."""
-        from get_videos import get_video_info
-        from errors import ReadtubeError
+        from readtube.videos import get_video_info
+        from readtube.errors import ReadtubeError
 
         with pytest.raises(ReadtubeError):
             get_video_info("https://invalid-url.example.com/video")
 
     def test_video_info_type(self):
         """Test VideoInfo TypedDict is properly defined."""
-        from get_videos import VideoInfo
+        from readtube.videos import VideoInfo
 
         # Should have expected keys
         expected_keys = {'title', 'video_id', 'description', 'channel', 'url', 'thumbnail', 'duration', 'chapters'}
@@ -943,14 +943,14 @@ class TestGetVideos:
 
     def test_chapter_info_type(self):
         """Test ChapterInfo TypedDict is properly defined."""
-        from get_videos import ChapterInfo
+        from readtube.videos import ChapterInfo
 
         expected_keys = {'title', 'start_time', 'end_time'}
         assert hasattr(ChapterInfo, '__annotations__')
 
     def test_channels_constant(self):
         """Test CHANNELS constant is defined."""
-        from get_videos import CHANNELS
+        from readtube.videos import CHANNELS
 
         assert isinstance(CHANNELS, list)
         assert len(CHANNELS) > 0
@@ -960,13 +960,13 @@ class TestGetVideos:
 
     def test_min_duration_constant(self):
         """Test MIN_DURATION_SECONDS constant."""
-        from get_videos import MIN_DURATION_SECONDS
+        from readtube.videos import MIN_DURATION_SECONDS
 
         assert MIN_DURATION_SECONDS == 60  # Filter out Shorts
 
     def test_main_function_exists(self):
         """Test main function is callable."""
-        from get_videos import main
+        from readtube.videos import main
 
         assert callable(main)
 
@@ -976,7 +976,7 @@ class TestBatchProcessing:
 
     def test_batch_config_load_and_expand(self, tmp_path):
         """Test BatchConfig loading."""
-        from config import BatchConfig
+        from readtube.config import BatchConfig
 
         config_data = {
             "output_dir": str(tmp_path / "output"),
@@ -998,8 +998,8 @@ class TestBatchProcessing:
 
     def test_process_job_with_mock(self, mocker):
         """Test process_job function with mocked dependencies."""
-        from batch import process_job
-        from config import BatchConfig, BatchJob
+        from readtube.batch import process_job
+        from readtube.config import BatchConfig, BatchJob
 
         # Mock get_video_info and get_transcript
         mock_video = {
@@ -1008,8 +1008,8 @@ class TestBatchProcessing:
             'video_id': 'abc123',
             'url': 'https://youtube.com/watch?v=abc123',
         }
-        mocker.patch('batch.get_video_info', return_value=mock_video)
-        mocker.patch('batch.get_transcript', return_value='This is a test transcript with many words.')
+        mocker.patch('readtube.batch.get_video_info', return_value=mock_video)
+        mocker.patch('readtube.batch.get_transcript', return_value='This is a test transcript with many words.')
 
         job = BatchJob(url="https://youtube.com/watch?v=abc123")
         batch_config = BatchConfig(output_dir="./output", jobs=[job])
@@ -1023,10 +1023,10 @@ class TestBatchProcessing:
 
     def test_process_job_video_fetch_fails(self, mocker):
         """Test process_job when video fetch fails."""
-        from batch import process_job
-        from config import BatchConfig, BatchJob
+        from readtube.batch import process_job
+        from readtube.config import BatchConfig, BatchJob
 
-        mocker.patch('batch.get_video_info', return_value=None)
+        mocker.patch('readtube.batch.get_video_info', return_value=None)
 
         job = BatchJob(url="https://youtube.com/watch?v=invalid")
         batch_config = BatchConfig(output_dir="./output", jobs=[job])
@@ -1036,12 +1036,12 @@ class TestBatchProcessing:
 
     def test_process_job_transcript_fails(self, mocker):
         """Test process_job when transcript fetch fails."""
-        from batch import process_job
-        from config import BatchConfig, BatchJob
+        from readtube.batch import process_job
+        from readtube.config import BatchConfig, BatchJob
 
         mock_video = {'title': 'Test', 'channel': 'Ch', 'video_id': 'abc'}
-        mocker.patch('batch.get_video_info', return_value=mock_video)
-        mocker.patch('batch.get_transcript', return_value=None)
+        mocker.patch('readtube.batch.get_video_info', return_value=mock_video)
+        mocker.patch('readtube.batch.get_transcript', return_value=None)
 
         job = BatchJob(url="https://youtube.com/watch?v=abc")
         batch_config = BatchConfig(output_dir="./output", jobs=[job])
@@ -1055,7 +1055,7 @@ class TestLLMBackends:
 
     def test_ai_code_environment_backend_not_in_claude(self):
         """Test AICodeEnvironmentBackend when not in Claude Code."""
-        from llm import AICodeEnvironmentBackend
+        from readtube.llm import AICodeEnvironmentBackend
         import os
 
         # Ensure we're not in Claude Code
@@ -1075,7 +1075,7 @@ class TestLLMBackends:
 
     def test_ai_code_environment_backend_in_claude(self):
         """Test AICodeEnvironmentBackend when in Claude Code."""
-        from llm import AICodeEnvironmentBackend
+        from readtube.llm import AICodeEnvironmentBackend
         import os
 
         old_val = os.environ.get("CLAUDE_CODE")
@@ -1095,7 +1095,7 @@ class TestLLMBackends:
 
     def test_llama_cpp_backend_unavailable_without_model(self):
         """Test LlamaCppBackend is unavailable without model."""
-        from llm import LlamaCppBackend
+        from readtube.llm import LlamaCppBackend
 
         backend = LlamaCppBackend(model_path="/nonexistent/model.gguf")
         # Should be unavailable since model doesn't exist
@@ -1103,7 +1103,7 @@ class TestLLMBackends:
 
     def test_ollama_backend_unavailable_without_server(self):
         """Test OllamaBackend is unavailable without server."""
-        from llm import OllamaBackend
+        from readtube.llm import OllamaBackend
 
         # Use a port that's unlikely to have Ollama
         backend = OllamaBackend(base_url="http://localhost:99999")
@@ -1111,7 +1111,7 @@ class TestLLMBackends:
 
     def test_claude_api_backend_unavailable_without_key(self):
         """Test ClaudeAPIBackend is unavailable without API key."""
-        from llm import ClaudeAPIBackend
+        from readtube.llm import ClaudeAPIBackend
         import os
 
         old_key = os.environ.pop("ANTHROPIC_API_KEY", None)
@@ -1125,7 +1125,7 @@ class TestLLMBackends:
 
     def test_openai_backend_unavailable_without_key(self):
         """Test OpenAIBackend is unavailable without API key."""
-        from llm import OpenAIBackend
+        from readtube.llm import OpenAIBackend
         import os
 
         old_key = os.environ.pop("OPENAI_API_KEY", None)
@@ -1139,23 +1139,23 @@ class TestLLMBackends:
 
     def test_backend_name_property(self):
         """Test LLMBackend name property."""
-        from llm import OllamaBackend
+        from readtube.llm import OllamaBackend
 
         backend = OllamaBackend()
         assert backend.name == "OllamaBackend"
 
     def test_generate_article_no_backend(self, mocker):
         """Test generate_article returns None when no backend available."""
-        from llm import generate_article
+        from readtube.llm import generate_article
 
-        mocker.patch('llm.get_backend', return_value=None)
+        mocker.patch('readtube.llm.get_backend', return_value=None)
 
         result = generate_article("transcript", "title", "channel")
         assert result is None
 
     def test_article_system_prompt_content(self):
         """Test ARTICLE_SYSTEM_PROMPT has required content."""
-        from llm import ARTICLE_SYSTEM_PROMPT
+        from readtube.llm import ARTICLE_SYSTEM_PROMPT
 
         assert "transcript" in ARTICLE_SYSTEM_PROMPT.lower()
         assert "article" in ARTICLE_SYSTEM_PROMPT.lower()
@@ -1167,21 +1167,21 @@ class TestImagesModule:
 
     def test_get_video_thumbnails_invalid_url(self):
         """Test get_video_thumbnails with invalid URL."""
-        from images import get_video_thumbnails
+        from readtube.images import get_video_thumbnails
 
         result = get_video_thumbnails("https://invalid-url.example.com/video", ".")
         assert result == []
 
     def test_extract_frames_returns_list(self):
         """Test extract_frames returns empty list on invalid input."""
-        from images import extract_frames
+        from readtube.images import extract_frames
 
         result = extract_frames("https://invalid-url.example.com/video", ["0:30"], ".")
         assert isinstance(result, list)
 
     def test_extract_frames_interval_returns_list(self):
         """Test extract_frames_interval returns empty list on invalid input."""
-        from images import extract_frames_interval
+        from readtube.images import extract_frames_interval
 
         result = extract_frames_interval("https://invalid-url.example.com/video", 60, ".")
         assert isinstance(result, list)
@@ -1192,7 +1192,7 @@ class TestWriteArticleExtended:
 
     def test_load_video_data_invalid_json(self, tmp_path):
         """Test loading invalid JSON returns None."""
-        from write_article import load_video_data
+        from readtube.article import load_video_data
 
         path = tmp_path / "invalid.json"
         path.write_text("not valid json {{{", encoding="utf-8")
@@ -1202,7 +1202,7 @@ class TestWriteArticleExtended:
 
     def test_generate_prompt_file_creates_directory(self, tmp_path):
         """Test prompt file generation creates output directory."""
-        from write_article import generate_prompt_file
+        from readtube.article import generate_prompt_file
 
         video_data = {
             "title": "Test",
@@ -1219,7 +1219,7 @@ class TestWriteArticleExtended:
 
     def test_generate_prompt_file_content_structure(self, tmp_path):
         """Test prompt file has correct structure."""
-        from write_article import generate_prompt_file
+        from readtube.article import generate_prompt_file
 
         video_data = {
             "title": "My Video Title",
@@ -1243,12 +1243,12 @@ class TestAsyncFetchExtended:
 
     def test_fetch_video_async_exists(self):
         """Test fetch_video_async function exists."""
-        from async_fetch import fetch_video_async
+        from readtube.async_fetch import fetch_video_async
         assert callable(fetch_video_async)
 
     def test_async_fetcher_class(self):
         """Test AsyncFetcher class exists and has expected methods."""
-        from async_fetch import AsyncFetcher
+        from readtube.async_fetch import AsyncFetcher
 
         fetcher = AsyncFetcher(max_concurrent=5, max_workers=10)
         assert hasattr(fetcher, 'fetch_video')
@@ -1258,7 +1258,7 @@ class TestAsyncFetchExtended:
 
     def test_async_fetcher_context_manager(self):
         """Test AsyncFetcher can be used as context manager."""
-        from async_fetch import AsyncFetcher
+        from readtube.async_fetch import AsyncFetcher
         import asyncio
 
         async def test():
@@ -1275,7 +1275,7 @@ class TestCreateEpubExtended:
 
     def test_create_ebook_with_html_format(self, tmp_path):
         """Test EPUB creation with HTML format."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [{
             'title': 'Test Article',
@@ -1295,7 +1295,7 @@ class TestCreateEpubExtended:
 
     def test_create_ebook_with_multiple_articles(self, tmp_path):
         """Test EPUB creation with multiple articles."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [
             {
@@ -1318,7 +1318,7 @@ class TestCreateEpubExtended:
 
     def test_create_ebook_with_include_cover(self, tmp_path):
         """Test EPUB creation with include_cover option."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [{
             'title': 'Article With Cover',
@@ -1335,7 +1335,7 @@ class TestCreateEpubExtended:
 
     def test_create_ebook_with_thumbnail(self, tmp_path):
         """Test EPUB creation with thumbnail URL."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [{
             'title': 'With Thumbnail',
@@ -1352,7 +1352,7 @@ class TestCreateEpubExtended:
 
     def test_escape_html_special_chars(self):
         """Test HTML escaping of special characters."""
-        from create_epub import _escape_html
+        from readtube.ebook import _escape_html
 
         assert _escape_html('&') == '&amp;'
         assert _escape_html('<') == '&lt;'
@@ -1362,7 +1362,7 @@ class TestCreateEpubExtended:
 
     def test_escape_html_combined(self):
         """Test HTML escaping of combined special characters."""
-        from create_epub import _escape_html
+        from readtube.ebook import _escape_html
 
         dangerous = '<script>alert("test")</script>'
         safe = _escape_html(dangerous)
@@ -1376,7 +1376,7 @@ class TestGetTranscriptsSecurity:
 
     def test_segment_text_handles_dict(self):
         """Test _segment_text handles dict input."""
-        from get_transcripts import _segment_text
+        from readtube.transcripts import _segment_text
 
         segment = {'text': 'Hello world', 'start': 0.0}
         result = _segment_text(segment)
@@ -1384,7 +1384,7 @@ class TestGetTranscriptsSecurity:
 
     def test_segment_text_handles_object(self):
         """Test _segment_text handles object input."""
-        from get_transcripts import _segment_text
+        from readtube.transcripts import _segment_text
 
         class MockSegment:
             text = 'Hello object'
@@ -1394,7 +1394,7 @@ class TestGetTranscriptsSecurity:
 
     def test_segment_start_handles_dict(self):
         """Test _segment_start handles dict input."""
-        from get_transcripts import _segment_start
+        from readtube.transcripts import _segment_start
 
         segment = {'text': 'Hello', 'start': 10.5}
         result = _segment_start(segment)
@@ -1402,7 +1402,7 @@ class TestGetTranscriptsSecurity:
 
     def test_segment_duration_handles_dict(self):
         """Test _segment_duration handles dict input."""
-        from get_transcripts import _segment_duration
+        from readtube.transcripts import _segment_duration
 
         segment = {'text': 'Hello', 'duration': 5.0}
         result = _segment_duration(segment)
@@ -1410,5 +1410,5 @@ class TestGetTranscriptsSecurity:
 
     def test_list_transcripts_wrapper(self):
         """Test _list_transcripts compatibility wrapper exists."""
-        from get_transcripts import _list_transcripts
+        from readtube.transcripts import _list_transcripts
         assert callable(_list_transcripts)

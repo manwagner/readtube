@@ -8,9 +8,9 @@ FROM node:20-slim as css-builder
 
 WORKDIR /css
 COPY package.json package-lock.json tailwind.config.js ./
-COPY static/input.css ./static/input.css
-COPY templates/ ./templates/
-RUN npm ci --ignore-scripts && npx tailwindcss -i static/input.css -o static/style.css --minify
+COPY readtube/static/input.css ./readtube/static/input.css
+COPY readtube/templates/ ./readtube/templates/
+RUN npm ci --ignore-scripts && npx tailwindcss -i readtube/static/input.css -o readtube/static/style.css --minify
 
 # ============================================
 # Stage 2: Build Python dependencies
@@ -71,10 +71,8 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application code
-COPY --chown=readtube:readtube *.py ./
-COPY --chown=readtube:readtube templates/ ./templates/
-COPY --chown=readtube:readtube static/ ./static/
-COPY --from=css-builder --chown=readtube:readtube /css/static/style.css ./static/style.css
+COPY --chown=readtube:readtube readtube/ ./readtube/
+COPY --from=css-builder --chown=readtube:readtube /css/readtube/static/style.css ./readtube/static/style.css
 COPY --chown=readtube:readtube tests/ ./tests/
 
 # Create directories with proper permissions
@@ -94,14 +92,14 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import fetch_transcript; print('OK')" || exit 1
+    CMD python -c "import readtube; print('OK')" || exit 1
 
 # Expose port for potential web dashboard
 EXPOSE 8000
 
 # Default entrypoint — run the web UI
 ENTRYPOINT ["python"]
-CMD ["-m", "uvicorn", "web:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["-m", "uvicorn", "readtube.web.app:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # ============================================
 # Usage Examples
@@ -111,30 +109,30 @@ CMD ["-m", "uvicorn", "web:app", "--host", "0.0.0.0", "--port", "8000"]
 #   docker build -t readtube .
 #
 # Fetch transcript:
-#   docker run --rm readtube fetch_transcript.py "https://youtube.com/watch?v=VIDEO_ID"
+#   docker run --rm readtube -m readtube "https://youtube.com/watch?v=VIDEO_ID"
 #
 # Fetch and save JSON:
 #   docker run --rm -v $(pwd)/output:/app/output readtube \
-#     fetch_transcript.py "https://youtube.com/watch?v=VIDEO_ID" --output-json /app/output/video.json
+#     -m readtube "https://youtube.com/watch?v=VIDEO_ID" --output-json /app/output/video.json
 #
 # Create EPUB from JSON:
 #   docker run --rm -v $(pwd)/output:/app/output readtube \
-#     write_article.py /app/output/video.json --format epub --output-dir /app/output
+#     -m readtube.article /app/output/video.json --format epub --output-dir /app/output
 #
 # Run with Ollama backend:
 #   docker run --rm --network host \
 #     -e OLLAMA_BASE_URL=http://localhost:11434 \
 #     -v $(pwd)/output:/app/output readtube \
-#     write_article.py /app/output/video.json
+#     -m readtube.article /app/output/video.json
 #
 # Run with Claude API:
 #   docker run --rm \
 #     -e ANTHROPIC_API_KEY=your-key-here \
 #     -v $(pwd)/output:/app/output readtube \
-#     write_article.py /app/output/video.json
+#     -m readtube.article /app/output/video.json
 #
 # Batch processing:
 #   docker run --rm \
 #     -v $(pwd)/config.yaml:/app/config.yaml:ro \
 #     -v $(pwd)/output:/app/output \
-#     readtube batch.py /app/config.yaml
+#     readtube -m readtube.batch /app/config.yaml

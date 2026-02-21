@@ -19,7 +19,7 @@ import argparse
 from typing import Optional, List, Dict, Any
 from abc import ABC, abstractmethod
 
-from config import logger
+from .config import logger
 
 
 class TranslationBackend(ABC):

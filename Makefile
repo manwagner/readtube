@@ -62,7 +62,7 @@ test:
 
 # Run tests with coverage
 test-cov:
-	pytest tests/ -v --cov=. --cov-report=term-missing --cov-report=html
+	pytest tests/ -v --cov=readtube --cov-report=term-missing --cov-report=html
 
 # Run unit tests only
 test-unit:
@@ -93,7 +93,7 @@ clean:
 
 # Demo: fetch a sample transcript
 demo:
-	python fetch_transcript.py "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+	python -m readtube "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 # Install all optional dependencies
 install-all: install
@@ -110,20 +110,20 @@ install-all: install
 
 # Start the web UI
 run: css
-	python web.py
+	python -m readtube.web.app
 
 # Start web UI + CSS watcher (development)
 dev:
-	npx tailwindcss -i static/input.css -o static/style.css --watch &
-	python web.py
+	npx tailwindcss -i readtube/static/input.css -o readtube/static/style.css --watch &
+	python -m readtube.web.app
 
 # Build Tailwind CSS
 css:
-	npx tailwindcss -i static/input.css -o static/style.css --minify
+	npx tailwindcss -i readtube/static/input.css -o readtube/static/style.css --minify
 
 # Watch CSS changes (development)
 css-watch:
-	npx tailwindcss -i static/input.css -o static/style.css --watch
+	npx tailwindcss -i readtube/static/input.css -o readtube/static/style.css --watch
 
 # Build and run with Docker
 docker:

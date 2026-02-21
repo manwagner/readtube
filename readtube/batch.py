@@ -18,10 +18,10 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 
-from config import BatchConfig, BatchJob, get_config, logger
-from get_videos import get_video_info, get_videos_from_playlist, is_playlist_url
-from get_transcripts import get_transcript
-from create_epub import create_ebook
+from .config import BatchConfig, BatchJob, get_config, logger
+from .videos import get_video_info, get_videos_from_playlist, is_playlist_url
+from .transcripts import get_transcript
+from .ebook import create_ebook
 
 # Progress indicator
 try:

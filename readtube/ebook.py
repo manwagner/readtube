@@ -8,7 +8,7 @@ Usage:
     python create_epub.py article.md --title "Title" --channel "Channel" --url "URL" --pdf
 
 Or import and use directly:
-    from create_epub import create_ebook
+    from readtube.ebook import create_ebook
     create_ebook(articles, format="epub")  # or format="pdf"
 """
 
@@ -377,7 +377,7 @@ def create_pdf(articles: List[Dict[str, Any]], output_path: Optional[str] = None
 
     page_size = "A5"
     try:
-        from config import get_config
+        from .config import get_config
 
         page_size = get_config().output.page_size or page_size
     except Exception:
@@ -655,7 +655,7 @@ def create_mobi(
 
     if include_cover is None:
         try:
-            from config import get_config
+            from .config import get_config
 
             include_cover = get_config().output.include_cover
         except Exception:
@@ -745,7 +745,7 @@ def create_azw3(
 
     if include_cover is None:
         try:
-            from config import get_config
+            from .config import get_config
 
             include_cover = get_config().output.include_cover
         except Exception:
@@ -794,7 +794,7 @@ def create_ebook(
     """
     if format is None:
         try:
-            from config import get_config
+            from .config import get_config
 
             format = get_config().output.default_format
         except Exception:
@@ -802,7 +802,7 @@ def create_ebook(
 
     if include_cover is None:
         try:
-            from config import get_config
+            from .config import get_config
 
             include_cover = get_config().output.include_cover
         except Exception:

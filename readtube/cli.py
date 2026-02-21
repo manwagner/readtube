@@ -18,9 +18,9 @@ import json
 import platform
 from importlib import metadata
 from typing import Optional, List, Dict, Any
-from get_videos import get_video_info, get_videos_from_channels, get_videos_from_playlist, is_playlist_url
-from get_transcripts import get_transcript, list_available_languages
-from errors import (
+from .videos import get_video_info, get_videos_from_channels, get_videos_from_playlist, is_playlist_url
+from .transcripts import get_transcript, list_available_languages
+from .errors import (
     ReadtubeError,
     RateLimitError,
     format_error_for_user,

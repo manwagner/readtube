@@ -15,7 +15,7 @@ import sys
 from typing import Optional, List, Dict, Any, TypedDict
 import yt_dlp
 
-from errors import (
+from .errors import (
     VideoNotFoundError,
     RateLimitError,
     NetworkError,
@@ -329,7 +329,7 @@ def get_videos_from_channels(channels: Optional[List[str]] = None) -> List[Video
     """
     if channels is None:
         try:
-            from config import get_config
+            from .config import get_config
 
             cfg = get_config()
             if cfg.channels:

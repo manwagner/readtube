@@ -16,7 +16,7 @@ import hashlib
 from typing import Optional, List, Dict, Any, TypedDict, Tuple
 from youtube_transcript_api import YouTubeTranscriptApi
 
-from errors import (
+from .errors import (
     TranscriptNotAvailableError,
     RateLimitError,
     is_rate_limit_error,
@@ -47,7 +47,7 @@ CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".transcrip
 def _get_cache_settings() -> Tuple[bool, int]:
     """Return cache_enabled and cache_days from config, with safe defaults."""
     try:
-        from config import get_config
+        from .config import get_config
 
         cfg = get_config()
         return cfg.fetch.cache_enabled, cfg.fetch.cache_days

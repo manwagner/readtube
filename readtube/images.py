@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 from urllib.request import urlretrieve
 
-from config import logger
+from .config import logger
 
 
 def get_video_thumbnails(video_url: str, output_dir: str = ".") -> List[str]:

@@ -68,10 +68,10 @@ dev = [
 ]
 
 [project.scripts]
-readtube = "fetch_transcript:main"
-readtube-batch = "batch:main"
-readtube-write = "write_article:main"
-readtube-web = "web:app"
+readtube = "readtube.cli:main"
+readtube-batch = "readtube.batch:main"
+readtube-write = "readtube.article:main"
+readtube-web = "readtube.web.app:main"
 
 [project.urls]
 Homepage = "https://github.com/unbalancedparentheses/readtube"
@@ -79,23 +79,7 @@ Repository = "https://github.com/unbalancedparentheses/readtube"
 Issues = "https://github.com/unbalancedparentheses/readtube/issues"
 
 [tool.setuptools]
-py-modules = [
-    "fetch_transcript",
-    "get_videos",
-    "get_transcripts",
-    "create_epub",
-    "config",
-    "themes",
-    "batch",
-    "rss",
-    "tts",
-    "images",
-    "translate",
-    "scheduler",
-    "async_fetch",
-    "integrations",
-    "llm",
-    "web",
-    "web_db",
-    "web_worker",
-]
+packages = ["readtube", "readtube.web"]
+
+[tool.setuptools.package-data]
+readtube = ["templates/**/*.html", "static/**/*"]

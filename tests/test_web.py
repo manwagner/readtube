@@ -30,8 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def _isolate_db(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> Generator[None, None, None]:
     """Use a temporary database for every test."""
     db_path = str(tmp_path / "test_web.db")
-    monkeypatch.setattr("web_db._DB_PATH", db_path)
-    import web_db as db
+    monkeypatch.setattr("readtube.web.db._DB_PATH", db_path)
+    import readtube.web.db as db
     # Reset thread-local so the next _get_conn() picks up the new path
     db._local.conn = None
     db.init_db()
@@ -46,9 +46,9 @@ def _isolate_db(monkeypatch: pytest.MonkeyPatch, tmp_path: Any) -> Generator[Non
 def client() -> Generator[Any, None, None]:
     """Create a test client with the worker disabled."""
     # Prevent the real worker from starting
-    with patch("web_worker.start"), patch("web_worker.stop"):
+    with patch("readtube.web.worker.start"), patch("readtube.web.worker.stop"):
         from httpx import ASGITransport, AsyncClient
-        from web import app
+        from readtube.web.app import app
         import asyncio
 
         transport = ASGITransport(app=app)
@@ -69,37 +69,37 @@ class TestWebDB:
     """Tests for web_db.py CRUD operations."""
 
     def test_settings_default_values(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         assert db.setting_get("llm_backend") == "ollama"
         assert db.setting_get("theme") == "default"
         assert db.setting_get("ollama_model") == "llama3.2"
 
     def test_settings_set_and_get(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.setting_set("llm_backend", "claude-api")
         assert db.setting_get("llm_backend") == "claude-api"
 
     def test_settings_no_overwrite(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.setting_set("theme", "dark")
         db.setting_set("theme", "modern", overwrite=False)
         assert db.setting_get("theme") == "dark"
 
     def test_settings_get_all(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         all_settings = db.settings_get_all()
         assert isinstance(all_settings, dict)
         assert "llm_backend" in all_settings
         assert "theme" in all_settings
 
     def test_settings_get_missing_key(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         assert db.setting_get("nonexistent", "fallback") == "fallback"
 
     # ── Sources ───────────────────────────────────────────
 
     def test_source_add_and_list(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         src_id = db.source_add("https://youtube.com/playlist?list=PL123", source_type="playlist", name="My Playlist")
         assert src_id > 0
         sources = db.source_list()
@@ -109,14 +109,14 @@ class TestWebDB:
         assert sources[0]["name"] == "My Playlist"
 
     def test_source_add_duplicate(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         id1 = db.source_add("https://youtube.com/@test")
         id2 = db.source_add("https://youtube.com/@test")
         assert id1 == id2
         assert len(db.source_list()) == 1
 
     def test_source_delete(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         src_id = db.source_add("https://youtube.com/@delete_me")
         db.source_delete(src_id)
         assert len(db.source_list()) == 0
@@ -124,7 +124,7 @@ class TestWebDB:
     # ── Articles ──────────────────────────────────────────
 
     def test_article_upsert_and_get(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert(
             "abc123",
             title="Test Video",
@@ -139,14 +139,14 @@ class TestWebDB:
         assert art["status"] == "pending"
 
     def test_article_upsert_updates_existing(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("abc123", title="Original")
         db.article_upsert("abc123", title="Updated")
         art = db.article_get("abc123")
         assert art["title"] == "Updated"
 
     def test_article_update(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("abc123", title="Test")
         db.article_update("abc123", status="done", article_md="# Hello")
         art = db.article_get("abc123")
@@ -154,14 +154,14 @@ class TestWebDB:
         assert art["article_md"] == "# Hello"
 
     def test_article_list_all(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("v1", title="Video 1")
         db.article_upsert("v2", title="Video 2")
         articles = db.article_list()
         assert len(articles) == 2
 
     def test_article_list_by_status(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("v1", title="Video 1", status="pending")
         db.article_upsert("v2", title="Video 2", status="pending")
         db.article_update("v1", status="done")
@@ -169,19 +169,19 @@ class TestWebDB:
         assert len(db.article_list(status="pending")) == 1
 
     def test_article_delete(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("v1", title="Delete Me")
         db.article_delete("v1")
         assert db.article_get("v1") is None
 
     def test_article_get_nonexistent(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         assert db.article_get("nonexistent") is None
 
     # ── Jobs ──────────────────────────────────────────────
 
     def test_job_create_and_list(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("v1", title="Test")
         job_id = db.job_create("fetch_video", article_id=art_id)
         assert job_id > 0
@@ -190,7 +190,7 @@ class TestWebDB:
         assert active[0]["job_type"] == "fetch_video"
 
     def test_job_next_pending(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("v1", title="Test")
         db.job_create("fetch_video", article_id=art_id)
         job = db.job_next_pending()
@@ -202,11 +202,11 @@ class TestWebDB:
         assert active[0]["status"] == "running"
 
     def test_job_next_pending_empty(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         assert db.job_next_pending() is None
 
     def test_job_update_status(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("v1", title="Test")
         job_id = db.job_create("fetch_video", article_id=art_id)
         db.job_update(job_id, status="done")
@@ -214,7 +214,7 @@ class TestWebDB:
         assert len(db.job_list_active()) == 0
 
     def test_job_list_all(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("v1", title="Test")
         src_id = db.source_add("https://youtube.com/@test")
         db.job_create("fetch_video", article_id=art_id)
@@ -237,7 +237,7 @@ class TestDashboardRoutes:
     def test_add_video_url(self, client: Any) -> None:
         resp = client.post("/add", data={"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"})
         assert resp.status_code == 200
-        import web_db as db
+        import readtube.web.db as db
         articles = db.article_list()
         assert len(articles) == 1
         assert articles[0]["video_id"] == "dQw4w9WgXcQ"
@@ -245,7 +245,7 @@ class TestDashboardRoutes:
     def test_add_playlist_url(self, client: Any) -> None:
         resp = client.post("/add", data={"url": "https://www.youtube.com/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf"})
         assert resp.status_code == 200
-        import web_db as db
+        import readtube.web.db as db
         sources = db.source_list()
         assert len(sources) == 1
         assert sources[0]["source_type"] == "playlist"
@@ -253,7 +253,7 @@ class TestDashboardRoutes:
     def test_add_channel_url(self, client: Any) -> None:
         resp = client.post("/add", data={"url": "https://www.youtube.com/@testchannel"})
         assert resp.status_code == 200
-        import web_db as db
+        import readtube.web.db as db
         sources = db.source_list()
         assert len(sources) == 1
         assert sources[0]["source_type"] == "channel"
@@ -268,7 +268,7 @@ class TestDashboardRoutes:
         assert resp.status_code == 404
 
     def test_article_reader_with_content(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert(
             "test123",
             title="Test Article",
@@ -287,7 +287,7 @@ class TestDashboardRoutes:
         assert "Test Article" in resp.text
 
     def test_article_regenerate(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("regen123", title="Regen Test", url="https://youtube.com/watch?v=regen123")
         db.article_update("regen123", status="done", article_md="old content")
         resp = client.post("/article/regen123/regenerate")
@@ -297,14 +297,14 @@ class TestDashboardRoutes:
         assert art["article_md"] is None
 
     def test_article_delete(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("del123", title="Delete Me")
         resp = client.post("/article/del123/delete")
         assert resp.status_code == 200
         assert db.article_get("del123") is None
 
     def test_article_download_not_ready(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("dl123", title="No Article Yet")
         resp = client.get("/article/dl123/download?format=epub")
         assert resp.status_code == 404
@@ -324,13 +324,13 @@ class TestSourceRoutes:
             "name": "Test Channel",
         })
         assert resp.status_code == 200
-        import web_db as db
+        import readtube.web.db as db
         sources = db.source_list()
         assert len(sources) == 1
         assert sources[0]["name"] == "Test Channel"
 
     def test_delete_source(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         src_id = db.source_add("https://youtube.com/@delete_me")
         resp = client.delete(f"/sources/{src_id}")
         assert resp.status_code == 200
@@ -356,7 +356,7 @@ class TestSettingsRoutes:
         })
         assert resp.status_code == 200
         assert "Settings saved" in resp.text
-        import web_db as db
+        import readtube.web.db as db
         assert db.setting_get("llm_backend") == "claude-api"
         assert db.setting_get("ollama_model") == "mistral"
         assert db.setting_get("theme") == "dark"
@@ -367,14 +367,14 @@ class TestHTMXEndpoints:
     """Tests for HTMX polling endpoints."""
 
     def test_api_articles(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("htmx1", title="HTMX Article", url="https://youtube.com/watch?v=htmx1")
         resp = client.get("/api/articles")
         assert resp.status_code == 200
         assert "HTMX Article" in resp.text
 
     def test_api_jobs(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("j1", title="Job Test")
         db.job_create("fetch_video", article_id=art_id)
         resp = client.get("/api/jobs")
@@ -392,7 +392,7 @@ class TestRSSFeed:
         assert "<rss" in resp.text
 
     def test_rss_feed_with_articles(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         from datetime import datetime
         db.article_upsert("rss1", title="RSS Article", channel="RSS Channel", url="https://youtube.com/watch?v=rss1")
         db.article_update("rss1", status="done", article_md="# RSS Content")
@@ -408,8 +408,8 @@ class TestWorkerPipeline:
 
     def test_fetch_video_pipeline(self) -> None:
         """Test the full video pipeline with mocked externals."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         art_id = db.article_upsert(
             "pipe123",
@@ -429,9 +429,9 @@ class TestWorkerPipeline:
             "chapters": [],
         }
 
-        with patch("get_videos.get_video_info", return_value=mock_info), \
-             patch("get_transcripts.get_transcript", return_value="This is a test transcript about interesting topics."), \
-             patch("llm.generate_article", return_value="# Generated Article\n\nThis is the article content."):
+        with patch("readtube.videos.get_video_info", return_value=mock_info), \
+             patch("readtube.transcripts.get_transcript", return_value="This is a test transcript about interesting topics."), \
+             patch("readtube.llm.generate_article", return_value="# Generated Article\n\nThis is the article content."):
             worker._do_fetch_video(job)
 
         art = db.article_get("pipe123")
@@ -443,14 +443,14 @@ class TestWorkerPipeline:
 
     def test_fetch_video_pipeline_no_info(self) -> None:
         """Test pipeline when video info is not found."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         art_id = db.article_upsert("fail1", url="https://youtube.com/watch?v=fail1")
         job_id = db.job_create("fetch_video", article_id=art_id)
         job = {"id": job_id, "job_type": "fetch_video", "article_id": art_id, "source_id": None}
 
-        with patch("get_videos.get_video_info", return_value=None):
+        with patch("readtube.videos.get_video_info", return_value=None):
             worker._do_fetch_video(job)
 
         art = db.article_get("fail1")
@@ -459,8 +459,8 @@ class TestWorkerPipeline:
 
     def test_fetch_video_pipeline_no_transcript(self) -> None:
         """Test pipeline when transcript is not available."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         art_id = db.article_upsert("fail2", url="https://youtube.com/watch?v=fail2")
         job_id = db.job_create("fetch_video", article_id=art_id)
@@ -477,8 +477,8 @@ class TestWorkerPipeline:
             "chapters": [],
         }
 
-        with patch("get_videos.get_video_info", return_value=mock_info), \
-             patch("get_transcripts.get_transcript", return_value=None):
+        with patch("readtube.videos.get_video_info", return_value=mock_info), \
+             patch("readtube.transcripts.get_transcript", return_value=None):
             worker._do_fetch_video(job)
 
         art = db.article_get("fail2")
@@ -486,8 +486,8 @@ class TestWorkerPipeline:
 
     def test_fetch_video_pipeline_llm_fails(self) -> None:
         """Test pipeline when LLM fails."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         art_id = db.article_upsert("fail3", url="https://youtube.com/watch?v=fail3")
         job_id = db.job_create("fetch_video", article_id=art_id)
@@ -504,9 +504,9 @@ class TestWorkerPipeline:
             "chapters": [],
         }
 
-        with patch("get_videos.get_video_info", return_value=mock_info), \
-             patch("get_transcripts.get_transcript", return_value="Some transcript"), \
-             patch("llm.generate_article", return_value=None):
+        with patch("readtube.videos.get_video_info", return_value=mock_info), \
+             patch("readtube.transcripts.get_transcript", return_value="Some transcript"), \
+             patch("readtube.llm.generate_article", return_value=None):
             worker._do_fetch_video(job)
 
         art = db.article_get("fail3")
@@ -515,8 +515,8 @@ class TestWorkerPipeline:
 
     def test_fetch_source_pipeline_single_video(self) -> None:
         """Test source pipeline for a single video URL."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         src_id = db.source_add("https://youtube.com/watch?v=src1", source_type="video")
         job_id = db.job_create("fetch_source", source_id=src_id)
@@ -533,8 +533,8 @@ class TestWorkerPipeline:
             "chapters": [],
         }
 
-        with patch("get_videos.get_video_info", return_value=mock_info), \
-             patch("get_videos.is_playlist_url", return_value=False):
+        with patch("readtube.videos.get_video_info", return_value=mock_info), \
+             patch("readtube.videos.is_playlist_url", return_value=False):
             worker._do_fetch_source(job)
 
         # Should have created an article and a fetch_video job
@@ -547,8 +547,8 @@ class TestWorkerPipeline:
 
     def test_dispatch_unknown_job_type(self) -> None:
         """Test dispatch with unknown job type."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         job_id = db.job_create("unknown_type")
         job = {"id": job_id, "job_type": "unknown_type", "article_id": None, "source_id": None}
@@ -564,21 +564,21 @@ class TestURLClassification:
     """Tests for URL classification in web.py."""
 
     def test_classify_video_url(self) -> None:
-        from web import _classify_url
+        from readtube.web.app import _classify_url
         assert _classify_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "video"
         assert _classify_url("https://youtu.be/dQw4w9WgXcQ") == "video"
 
     def test_classify_playlist_url(self) -> None:
-        from web import _classify_url
+        from readtube.web.app import _classify_url
         assert _classify_url("https://www.youtube.com/playlist?list=PLtest") == "playlist"
         assert _classify_url("https://www.youtube.com/watch?v=abc&list=PLtest") == "playlist"
 
     def test_classify_channel_url(self) -> None:
-        from web import _classify_url
+        from readtube.web.app import _classify_url
         assert _classify_url("https://www.youtube.com/@testchannel") == "channel"
 
     def test_extract_video_id(self) -> None:
-        from web import _extract_video_id
+        from readtube.web.app import _extract_video_id
         assert _extract_video_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "dQw4w9WgXcQ"
         assert _extract_video_id("https://youtu.be/dQw4w9WgXcQ") == "dQw4w9WgXcQ"
         assert _extract_video_id("not a url") is None
@@ -590,7 +590,7 @@ class TestDownload:
     """Tests for EPUB download route."""
 
     def test_download_epub(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert(
             "epub1",
             title="EPUB Test",
@@ -608,7 +608,7 @@ class TestDownload:
         assert len(resp.content) > 100
 
     def test_download_html(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert(
             "html1",
             title="HTML Test",
@@ -631,7 +631,7 @@ class TestFieldWhitelisting:
     """Tests for SQL injection prevention via field whitelisting."""
 
     def test_article_update_valid_fields(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("wl1", title="Test")
         db.article_update("wl1", status="done", title="Updated")
         art = db.article_get("wl1")
@@ -639,13 +639,13 @@ class TestFieldWhitelisting:
         assert art["title"] == "Updated"
 
     def test_article_update_invalid_field_rejected(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("wl2", title="Test")
         with pytest.raises(ValueError, match="Invalid article fields"):
             db.article_update("wl2", status="done", malicious_field="DROP TABLE")
 
     def test_job_update_valid_fields(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("wl3", title="Test")
         job_id = db.job_create("fetch_video", article_id=art_id)
         db.job_update(job_id, status="done")
@@ -653,7 +653,7 @@ class TestFieldWhitelisting:
         assert any(j["status"] == "done" for j in all_jobs)
 
     def test_job_update_invalid_field_rejected(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("wl4", title="Test")
         job_id = db.job_create("fetch_video", article_id=art_id)
         with pytest.raises(ValueError, match="Invalid job fields"):
@@ -666,7 +666,7 @@ class TestURLValidation:
     """Tests for YouTube URL validation in routes."""
 
     def test_is_valid_youtube_url(self) -> None:
-        from web import _is_valid_youtube_url
+        from readtube.web.app import _is_valid_youtube_url
         assert _is_valid_youtube_url("https://www.youtube.com/watch?v=abc123")
         assert _is_valid_youtube_url("https://youtube.com/watch?v=abc123")
         assert _is_valid_youtube_url("https://youtu.be/abc123")
@@ -674,7 +674,7 @@ class TestURLValidation:
         assert _is_valid_youtube_url("http://youtube.com/watch?v=abc123")
 
     def test_rejects_non_youtube_urls(self) -> None:
-        from web import _is_valid_youtube_url
+        from readtube.web.app import _is_valid_youtube_url
         assert not _is_valid_youtube_url("https://example.com/watch?v=abc")
         assert not _is_valid_youtube_url("https://notyoutube.com/watch?v=abc")
         assert not _is_valid_youtube_url("ftp://youtube.com/watch?v=abc")
@@ -685,7 +685,7 @@ class TestURLValidation:
         resp = client.post("/add", data={"url": "https://example.com/not-youtube"})
         assert resp.status_code == 200
         assert "valid YouTube URL" in resp.text
-        import web_db as db
+        import readtube.web.db as db
         assert len(db.article_list()) == 0
 
     def test_sources_add_invalid_url_returns_error(self, client: Any) -> None:
@@ -695,7 +695,7 @@ class TestURLValidation:
         })
         assert resp.status_code == 200
         assert "valid YouTube URL" in resp.text
-        import web_db as db
+        import readtube.web.db as db
         assert len(db.source_list()) == 0
 
 
@@ -705,7 +705,7 @@ class TestJobRecovery:
     """Tests for stuck job recovery and cleanup."""
 
     def test_recover_stuck_jobs(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("stuck1", title="Stuck")
         job_id = db.job_create("fetch_video", article_id=art_id)
         # Claim the job (sets status to running)
@@ -722,7 +722,7 @@ class TestJobRecovery:
         assert job is not None
 
     def test_no_recovery_for_recent_jobs(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("recent1", title="Recent")
         db.job_create("fetch_video", article_id=art_id)
         db.job_next_pending()  # claims it → running
@@ -730,7 +730,7 @@ class TestJobRecovery:
         assert recovered == 0
 
     def test_cleanup_old_jobs(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("clean1", title="Cleanup")
         job_id = db.job_create("fetch_video", article_id=art_id)
         db.job_update(job_id, status="done")
@@ -743,7 +743,7 @@ class TestJobRecovery:
         assert len(db.job_list_all()) == 0
 
     def test_cleanup_preserves_recent_jobs(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         art_id = db.article_upsert("keep1", title="Keep")
         job_id = db.job_create("fetch_video", article_id=art_id)
         db.job_update(job_id, status="done")
@@ -758,7 +758,7 @@ class TestSearchFilter:
     """Tests for article search and status filter."""
 
     def test_article_list_search_by_title(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("s1", title="Python Tutorial")
         db.article_upsert("s2", title="Rust Guide")
         db.article_upsert("s3", title="Python Advanced")
@@ -766,7 +766,7 @@ class TestSearchFilter:
         assert len(results) == 2
 
     def test_article_list_search_by_channel(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("s4", title="Video 1", channel="TechChannel")
         db.article_upsert("s5", title="Video 2", channel="FoodChannel")
         results = db.article_list(search="Tech")
@@ -774,7 +774,7 @@ class TestSearchFilter:
         assert results[0]["channel"] == "TechChannel"
 
     def test_article_list_search_and_status(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("s6", title="Done Python", status="pending")
         db.article_upsert("s7", title="Pending Python", status="pending")
         db.article_update("s6", status="done")
@@ -783,13 +783,13 @@ class TestSearchFilter:
         assert results[0]["video_id"] == "s6"
 
     def test_article_list_search_no_results(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("s8", title="Something")
         results = db.article_list(search="nonexistent")
         assert len(results) == 0
 
     def test_dashboard_search_via_route(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("sr1", title="Searchable Video", channel="TestCh")
         db.article_upsert("sr2", title="Other Video", channel="OtherCh")
         resp = client.get("/?q=Searchable")
@@ -797,7 +797,7 @@ class TestSearchFilter:
         assert "Searchable Video" in resp.text
 
     def test_api_articles_search(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("api1", title="API Searchable", channel="Ch")
         db.article_upsert("api2", title="API Other", channel="Ch")
         resp = client.get("/api/articles?q=Searchable")
@@ -812,8 +812,8 @@ class TestChapterAwareArticles:
 
     def test_chapter_splitting_in_worker(self) -> None:
         """Test that chapters cause structured transcript to be passed to LLM."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         art_id = db.article_upsert("ch1", url="https://www.youtube.com/watch?v=ch1")
         job_id = db.job_create("fetch_video", article_id=art_id)
@@ -838,9 +838,9 @@ class TestChapterAwareArticles:
             captured.update(kwargs)
             return "# Chapter Test\n\n## Introduction\n\nIntro content.\n\n## Main Topic\n\nMain content."
 
-        with patch("get_videos.get_video_info", return_value=mock_info), \
-             patch("get_transcripts.get_transcript", return_value="Word " * 100), \
-             patch("llm.generate_article", side_effect=mock_generate):
+        with patch("readtube.videos.get_video_info", return_value=mock_info), \
+             patch("readtube.transcripts.get_transcript", return_value="Word " * 100), \
+             patch("readtube.llm.generate_article", side_effect=mock_generate):
             worker._do_fetch_video(job)
 
         art = db.article_get("ch1")
@@ -853,8 +853,8 @@ class TestChapterAwareArticles:
 
     def test_no_chapters_uses_flat_template(self) -> None:
         """Test that videos without chapters use the normal template."""
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         art_id = db.article_upsert("nch1", url="https://www.youtube.com/watch?v=nch1")
         job_id = db.job_create("fetch_video", article_id=art_id)
@@ -876,9 +876,9 @@ class TestChapterAwareArticles:
             captured.update(kwargs)
             return "# No Chapters\n\nArticle content."
 
-        with patch("get_videos.get_video_info", return_value=mock_info), \
-             patch("get_transcripts.get_transcript", return_value="Some transcript"), \
-             patch("llm.generate_article", side_effect=mock_generate):
+        with patch("readtube.videos.get_video_info", return_value=mock_info), \
+             patch("readtube.transcripts.get_transcript", return_value="Some transcript"), \
+             patch("readtube.llm.generate_article", side_effect=mock_generate):
             worker._do_fetch_video(job)
 
         assert captured.get("has_chapters") is False
@@ -890,7 +890,7 @@ class TestMarkdownDownload:
     """Tests for Feature 2: Markdown download."""
 
     def test_download_md(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert(
             "md1",
             title="MD Test",
@@ -909,7 +909,7 @@ class TestMarkdownDownload:
         assert "attachment" in resp.headers.get("content-disposition", "")
 
     def test_article_card_has_md_button(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("md2", title="MD Button Test", url="https://youtube.com/watch?v=md2")
         db.article_update("md2", status="done", article_md="# Content", article_html="<h1>Content</h1>")
         resp = client.get("/api/articles")
@@ -923,13 +923,13 @@ class TestKindleSend:
     """Tests for Feature 3: Kindle send."""
 
     def test_kindle_settings_defaults(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         assert db.setting_get("kindle_email") == ""
         assert db.setting_get("smtp_host") == ""
         assert db.setting_get("smtp_port") == "587"
 
     def test_kindle_send_no_smtp_configured(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("k1", title="Kindle Test", url="https://youtube.com/watch?v=k1")
         db.article_update("k1", status="done", article_md="# Kindle Content")
         resp = client.post("/article/k1/send-kindle")
@@ -937,7 +937,7 @@ class TestKindleSend:
         assert "Configure" in resp.text or "Settings" in resp.text
 
     def test_kindle_send_article_not_ready(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.article_upsert("k2", title="Not Ready", url="https://youtube.com/watch?v=k2")
         resp = client.post("/article/k2/send-kindle")
         assert resp.status_code == 200
@@ -945,7 +945,7 @@ class TestKindleSend:
 
     def test_kindle_send_with_smtp(self, client: Any) -> None:
         """Test kindle send with mocked SMTP."""
-        import web_db as db
+        import readtube.web.db as db
         db.setting_set("kindle_email", "test@kindle.com")
         db.setting_set("smtp_host", "smtp.test.com")
         db.setting_set("smtp_from", "from@test.com")
@@ -975,7 +975,7 @@ class TestKindleSend:
         assert "smtp_host" in resp.text
 
     def test_save_kindle_settings(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         resp = client.post("/settings", data={
             "llm_backend": "ollama",
             "ollama_model": "llama3.2",
@@ -1001,11 +1001,11 @@ class TestScheduledFetches:
     """Tests for Feature 4: Scheduled fetches."""
 
     def test_auto_fetch_interval_default(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         assert db.setting_get("auto_fetch_interval") == "0"
 
     def test_source_update_auto_fetch(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         src_id = db.source_add("https://youtube.com/@autofetch", source_type="channel")
         src = db.source_get(src_id)
         assert src["auto_fetch"] == 0
@@ -1014,7 +1014,7 @@ class TestScheduledFetches:
         assert src["auto_fetch"] == 1
 
     def test_source_list_auto_fetch(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         db.source_add("https://youtube.com/@auto1", source_type="channel")
         s2 = db.source_add("https://youtube.com/@auto2", source_type="channel")
         db.source_update(s2, auto_fetch=1)
@@ -1023,7 +1023,7 @@ class TestScheduledFetches:
         assert auto_sources[0]["url"] == "https://youtube.com/@auto2"
 
     def test_toggle_auto_fetch_route(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         src_id = db.source_add("https://youtube.com/@toggle", source_type="channel", name="Toggle Test")
         resp = client.post(f"/sources/{src_id}/toggle-auto-fetch")
         assert resp.status_code == 200
@@ -1036,8 +1036,8 @@ class TestScheduledFetches:
         assert src["auto_fetch"] == 0
 
     def test_auto_fetch_sources_creates_jobs(self) -> None:
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         src_id = db.source_add("https://youtube.com/@autojob", source_type="channel")
         db.source_update(src_id, auto_fetch=1)
@@ -1047,8 +1047,8 @@ class TestScheduledFetches:
         assert len(fetch_source_jobs) >= 1
 
     def test_auto_fetch_sources_skips_active_jobs(self) -> None:
-        import web_db as db
-        import web_worker as worker
+        import readtube.web.db as db
+        import readtube.web.worker as worker
 
         src_id = db.source_add("https://youtube.com/@skipactive", source_type="channel")
         db.source_update(src_id, auto_fetch=1)
@@ -1061,7 +1061,7 @@ class TestScheduledFetches:
         assert len(source_jobs) == 1
 
     def test_save_auto_fetch_interval_converts_to_seconds(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         resp = client.post("/settings", data={
             "llm_backend": "ollama",
             "ollama_model": "llama3.2",
@@ -1080,7 +1080,7 @@ class TestScheduledFetches:
         assert db.setting_get("auto_fetch_interval") == "3600"  # stored as seconds
 
     def test_source_update_invalid_field(self) -> None:
-        import web_db as db
+        import readtube.web.db as db
         src_id = db.source_add("https://youtube.com/@invalid")
         with pytest.raises(ValueError, match="Invalid source fields"):
             db.source_update(src_id, malicious="DROP TABLE")
@@ -1092,7 +1092,7 @@ class TestOPMLImport:
     """Tests for Feature 5: OPML import."""
 
     def test_import_opml_basic(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         opml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
         <opml version="1.0">
           <body>
@@ -1119,7 +1119,7 @@ class TestOPMLImport:
         assert "https://www.youtube.com/channel/UC456" in urls
 
     def test_import_opml_uses_title(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         opml_content = b"""<?xml version="1.0"?>
         <opml version="1.0">
           <body>
@@ -1147,7 +1147,7 @@ class TestOPMLImport:
         assert "Invalid" in resp.text
 
     def test_import_opml_skips_non_youtube(self, client: Any) -> None:
-        import web_db as db
+        import readtube.web.db as db
         opml_content = b"""<?xml version="1.0"?>
         <opml version="1.0">
           <body>
@@ -1170,7 +1170,7 @@ class TestOPMLImport:
 
     def test_import_opml_xml_url_fallback(self, client: Any) -> None:
         """Test that when htmlUrl is missing, xmlUrl with channel_id is used."""
-        import web_db as db
+        import readtube.web.db as db
         opml_content = b"""<?xml version="1.0"?>
         <opml version="1.0">
           <body>

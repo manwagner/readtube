@@ -5,7 +5,7 @@ Provides async versions of video and transcript fetching for better performance.
 
 Usage:
     import asyncio
-    from async_fetch import fetch_videos_async
+    from readtube.async_fetch import fetch_videos_async
 
     videos = asyncio.run(fetch_videos_async(urls))
 """
@@ -14,7 +14,7 @@ import asyncio
 from typing import Optional, List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 
-from config import logger
+from .config import logger
 
 
 async def fetch_video_async(url: str, executor: Optional[ThreadPoolExecutor] = None) -> Optional[Dict[str, Any]]:
@@ -28,7 +28,7 @@ async def fetch_video_async(url: str, executor: Optional[ThreadPoolExecutor] = N
     Returns:
         Video info dict or None
     """
-    from get_videos import get_video_info
+    from .videos import get_video_info
 
     loop = asyncio.get_event_loop()
     if executor:
@@ -52,7 +52,7 @@ async def fetch_transcript_async(
     Returns:
         Transcript text or None
     """
-    from get_transcripts import get_transcript
+    from .transcripts import get_transcript
 
     loop = asyncio.get_event_loop()
 

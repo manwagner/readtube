@@ -34,9 +34,9 @@ class TestEndToEndPipeline:
     @pytest.mark.slow
     def test_full_pipeline_single_video(self):
         """Test the complete pipeline: fetch video -> get transcript -> create epub."""
-        from get_videos import get_video_info
-        from get_transcripts import get_transcript
-        from create_epub import create_epub_book
+        from readtube.videos import get_video_info
+        from readtube.transcripts import get_transcript
+        from readtube.ebook import create_epub_book
 
         # Step 1: Fetch video info
         video = get_video_info(TEST_VIDEO_URL)
@@ -90,7 +90,7 @@ The video covers interesting content about music and culture.
     @pytest.mark.slow
     def test_video_info_extraction(self):
         """Test that we can extract complete video info."""
-        from get_videos import get_video_info
+        from readtube.videos import get_video_info
 
         video = get_video_info(TEST_VIDEO_URL)
 
@@ -111,7 +111,7 @@ The video covers interesting content about music and culture.
     @pytest.mark.slow
     def test_transcript_extraction(self):
         """Test that we can extract video transcript."""
-        from get_transcripts import get_transcript
+        from readtube.transcripts import get_transcript
 
         try:
             transcript = get_transcript(TEST_VIDEO_ID)
@@ -129,7 +129,7 @@ The video covers interesting content about music and culture.
     @pytest.mark.slow
     def test_transcript_language_listing(self):
         """Test listing available transcript languages."""
-        from get_transcripts import list_available_languages
+        from readtube.transcripts import list_available_languages
 
         try:
             languages = list_available_languages(TEST_VIDEO_ID)
@@ -149,7 +149,7 @@ The video covers interesting content about music and culture.
     @pytest.mark.slow
     def test_transcript_caching(self):
         """Test that transcripts are cached correctly."""
-        from get_transcripts import get_transcript, load_from_cache, clear_cache
+        from readtube.transcripts import get_transcript, load_from_cache, clear_cache
         import time
 
         # Clear cache first
@@ -179,7 +179,7 @@ The video covers interesting content about music and culture.
 
     def test_epub_creation_with_cover(self):
         """Test EPUB creation with thumbnail cover."""
-        from create_epub import create_epub_book
+        from readtube.ebook import create_epub_book
 
         article = {
             "title": "Test Article",
@@ -196,7 +196,7 @@ The video covers interesting content about music and culture.
 
     def test_html_output(self):
         """Test HTML output generation."""
-        from create_epub import create_html
+        from readtube.ebook import create_html
 
         article = {
             "title": "Test Article",
@@ -225,7 +225,7 @@ The video covers interesting content about music and culture.
 
     def test_multiple_articles_epub(self):
         """Test creating EPUB with multiple articles."""
-        from create_epub import create_epub_book
+        from readtube.ebook import create_epub_book
 
         articles = [
             {
@@ -250,8 +250,8 @@ class TestEdgeCases:
 
     def test_invalid_video_url(self):
         """Test handling of invalid video URL."""
-        from get_videos import get_video_info
-        from errors import VideoNotFoundError
+        from readtube.videos import get_video_info
+        from readtube.errors import VideoNotFoundError
 
         # Should raise VideoNotFoundError for unavailable videos
         with pytest.raises(VideoNotFoundError):
@@ -259,7 +259,7 @@ class TestEdgeCases:
 
     def test_empty_article_list(self):
         """Test EPUB creation with empty article list."""
-        from create_epub import create_epub_book
+        from readtube.ebook import create_epub_book
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output_path = os.path.join(temp_dir, "empty.epub")
@@ -270,7 +270,7 @@ class TestEdgeCases:
 
     def test_special_characters_in_title(self):
         """Test handling of special characters in article titles."""
-        from create_epub import create_epub_book
+        from readtube.ebook import create_epub_book
 
         article = {
             "title": "Test: \"Special\" Characters & Symbols <script>",
@@ -287,7 +287,7 @@ class TestEdgeCases:
 
     def test_very_long_article(self):
         """Test handling of very long articles."""
-        from create_epub import create_epub_book
+        from readtube.ebook import create_epub_book
 
         # Generate a long article
         long_content = "# Long Article\n\n" + ("This is a paragraph. " * 1000 + "\n\n") * 10
@@ -313,7 +313,7 @@ class TestPlaylistSupport:
 
     def test_playlist_url_detection(self):
         """Test playlist URL detection."""
-        from get_videos import is_playlist_url
+        from readtube.videos import is_playlist_url
 
         # Playlist URLs
         assert is_playlist_url("https://www.youtube.com/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf")
@@ -342,7 +342,7 @@ class TestGetVideosE2E:
     @pytest.mark.slow
     def test_get_video_info_with_chapters(self):
         """Test fetching video info for a video with chapters."""
-        from get_videos import get_video_info
+        from readtube.videos import get_video_info
 
         # Use a video known to have chapters
         video = get_video_info(TEST_VIDEO_URL)
@@ -354,7 +354,7 @@ class TestGetVideosE2E:
     @pytest.mark.slow
     def test_get_videos_from_urls_single(self):
         """Test get_videos_from_urls with single video."""
-        from get_videos import get_videos_from_urls
+        from readtube.videos import get_videos_from_urls
 
         videos = get_videos_from_urls([TEST_VIDEO_URL])
 
@@ -364,7 +364,7 @@ class TestGetVideosE2E:
     @pytest.mark.slow
     def test_get_videos_from_urls_multiple(self):
         """Test get_videos_from_urls with multiple videos."""
-        from get_videos import get_videos_from_urls
+        from readtube.videos import get_videos_from_urls
 
         # Two different videos
         urls = [
@@ -378,7 +378,7 @@ class TestGetVideosE2E:
     @pytest.mark.slow
     def test_main_function_with_urls(self):
         """Test main function with video URLs."""
-        from get_videos import main
+        from readtube.videos import main
 
         videos = main(video_urls=[TEST_VIDEO_URL])
 
@@ -400,7 +400,7 @@ class TestGetTranscriptsE2E:
     @pytest.mark.slow
     def test_get_transcript_with_timestamps(self):
         """Test getting transcript with timestamps."""
-        from get_transcripts import get_transcript_with_timestamps
+        from readtube.transcripts import get_transcript_with_timestamps
 
         try:
             result = get_transcript_with_timestamps(TEST_VIDEO_ID)
@@ -417,7 +417,7 @@ class TestGetTranscriptsE2E:
     @pytest.mark.slow
     def test_get_transcript_different_language(self):
         """Test getting transcript in different language if available."""
-        from get_transcripts import get_transcript, list_available_languages
+        from readtube.transcripts import get_transcript, list_available_languages
 
         try:
             languages = list_available_languages(TEST_VIDEO_ID)
@@ -442,7 +442,7 @@ class TestGetTranscriptsE2E:
     @pytest.mark.slow
     def test_format_timestamp(self):
         """Test timestamp formatting."""
-        from get_transcripts import format_timestamp
+        from readtube.transcripts import format_timestamp
 
         assert format_timestamp(0) == "0:00"
         assert format_timestamp(65) == "1:05"
@@ -466,7 +466,7 @@ class TestImagesE2E:
     @pytest.mark.slow
     def test_get_best_thumbnail_real(self):
         """Test downloading best thumbnail from real video."""
-        from images import get_best_thumbnail
+        from readtube.images import get_best_thumbnail
 
         output_path = os.path.join(self.temp_dir, "thumb.jpg")
         result = get_best_thumbnail(TEST_VIDEO_URL, output_path)
@@ -478,7 +478,7 @@ class TestImagesE2E:
     @pytest.mark.slow
     def test_get_video_thumbnails_real(self):
         """Test downloading all thumbnails from real video."""
-        from images import get_video_thumbnails
+        from readtube.images import get_video_thumbnails
 
         results = get_video_thumbnails(TEST_VIDEO_URL, self.temp_dir)
 
@@ -502,7 +502,7 @@ class TestAsyncFetchE2E:
     def test_fetch_video_async_real(self):
         """Test async video fetching with real URL."""
         import asyncio
-        from async_fetch import fetch_video_async
+        from readtube.async_fetch import fetch_video_async
 
         result = asyncio.run(fetch_video_async(TEST_VIDEO_URL))
 
@@ -513,7 +513,7 @@ class TestAsyncFetchE2E:
     def test_fetch_videos_async_multiple(self):
         """Test async fetching multiple videos."""
         import asyncio
-        from async_fetch import fetch_videos_async
+        from readtube.async_fetch import fetch_videos_async
 
         urls = [
             "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -528,7 +528,7 @@ class TestAsyncFetchE2E:
     def test_async_fetcher_class_real(self):
         """Test AsyncFetcher class with real videos."""
         import asyncio
-        from async_fetch import AsyncFetcher
+        from readtube.async_fetch import AsyncFetcher
 
         async def test():
             async with AsyncFetcher(max_concurrent=2) as fetcher:
@@ -557,7 +557,7 @@ class TestFetchTranscriptCLI:
     @pytest.mark.slow
     def test_fetch_single_video(self):
         """Test fetch_single_video function."""
-        from fetch_transcript import fetch_single_video
+        from readtube.cli import fetch_single_video
 
         try:
             result = fetch_single_video(TEST_VIDEO_URL)
@@ -575,7 +575,7 @@ class TestFetchTranscriptCLI:
     @pytest.mark.slow
     def test_fetch_single_video_with_output_json(self):
         """Test saving fetch result to JSON."""
-        from fetch_transcript import fetch_single_video, write_video_json
+        from readtube.cli import fetch_single_video, write_video_json
         import json
 
         try:
@@ -612,7 +612,7 @@ class TestWriteArticleCLI:
 
     def test_write_article_prompt_only(self):
         """Test write_article in prompt-only mode."""
-        from write_article import load_video_data, generate_prompt_file
+        from readtube.article import load_video_data, generate_prompt_file
         import json
 
         # Create test video data
@@ -656,8 +656,8 @@ class TestBatchProcessingE2E:
     @pytest.mark.slow
     def test_process_single_job(self):
         """Test processing a single batch job."""
-        from batch import process_job
-        from config import BatchConfig, BatchJob
+        from readtube.batch import process_job
+        from readtube.config import BatchConfig, BatchJob
 
         job = BatchJob(url=TEST_VIDEO_URL)
         config = BatchConfig(output_dir=self.temp_dir, jobs=[job])
@@ -689,7 +689,7 @@ class TestCreateEpubFormats:
 
     def test_create_epub_with_markdown_formatting(self):
         """Test EPUB with rich markdown formatting."""
-        from create_epub import create_epub_book
+        from readtube.ebook import create_epub_book
 
         article = {
             "title": "Markdown Test",
@@ -735,7 +735,7 @@ Final thoughts here.
 
     def test_create_html_standalone(self):
         """Test standalone HTML creation."""
-        from create_epub import create_html
+        from readtube.ebook import create_html
 
         articles = [
             {
@@ -765,7 +765,7 @@ Final thoughts here.
 
     def test_create_ebook_auto_filename(self):
         """Test EPUB creation with auto-generated filename."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [{
             "title": "Auto Named Article",
@@ -794,7 +794,7 @@ class TestRSSFeedsE2E:
 
     def test_generate_complete_rss_feed(self):
         """Test generating a complete RSS feed."""
-        from rss import generate_rss_feed
+        from readtube.rss import generate_rss_feed
 
         articles = [
             {
@@ -829,7 +829,7 @@ class TestRSSFeedsE2E:
 
     def test_generate_complete_atom_feed(self):
         """Test generating a complete Atom feed."""
-        from rss import generate_atom_feed
+        from readtube.rss import generate_atom_feed
 
         articles = [
             {
@@ -857,13 +857,13 @@ class TestLLMIntegration:
 
     def test_generate_article_with_mock_backend(self, mocker):
         """Test article generation with mocked LLM backend."""
-        from llm import generate_article, LLMBackend
+        from readtube.llm import generate_article, LLMBackend
 
         # Create a mock backend
         mock_backend = mocker.MagicMock(spec=LLMBackend)
         mock_backend.generate.return_value = "# Generated Article\n\nThis is the generated content."
 
-        mocker.patch('llm.get_backend', return_value=mock_backend)
+        mocker.patch('readtube.llm.get_backend', return_value=mock_backend)
 
         result = generate_article(
             transcript="This is a test transcript",
@@ -876,7 +876,7 @@ class TestLLMIntegration:
 
     def test_ollama_backend_generate_mock(self, mocker):
         """Test Ollama backend with mocked HTTP response."""
-        from llm import OllamaBackend
+        from readtube.llm import OllamaBackend
         import json
 
         # Mock urllib.request.urlopen
@@ -897,7 +897,7 @@ class TestLLMIntegration:
 
     def test_openai_backend_generate_mock(self, mocker):
         """Test OpenAI backend with mocked HTTP response."""
-        from llm import OpenAIBackend
+        from readtube.llm import OpenAIBackend
         import json
 
         mock_response = mocker.MagicMock()
@@ -927,7 +927,7 @@ class TestSchedulerIntegration:
 
     def test_scheduler_full_workflow(self):
         """Test scheduler initialization and history tracking."""
-        from scheduler import FetchHistory
+        from readtube.scheduler import FetchHistory
         from pathlib import Path
 
         history_path = Path(self.temp_dir) / "history.json"
@@ -949,7 +949,7 @@ class TestSchedulerIntegration:
 
     def test_create_systemd_service(self):
         """Test systemd service file generation."""
-        from scheduler import create_systemd_service
+        from readtube.scheduler import create_systemd_service
 
         config_path = os.path.join(self.temp_dir, "config.yaml")
         service = create_systemd_service(config_path, interval=3600)
@@ -960,7 +960,7 @@ class TestSchedulerIntegration:
 
     def test_create_launchd_plist(self):
         """Test launchd plist file generation."""
-        from scheduler import create_launchd_plist
+        from readtube.scheduler import create_launchd_plist
 
         config_path = os.path.join(self.temp_dir, "config.yaml")
         plist = create_launchd_plist(config_path, interval=3600)
@@ -975,7 +975,7 @@ class TestTTSIntegration:
 
     def test_preprocess_complete_article(self):
         """Test preprocessing a complete article for TTS."""
-        from tts import preprocess_text
+        from readtube.tts import preprocess_text
 
         article = """# Article Title
 
@@ -1023,7 +1023,7 @@ class TestTranslateIntegration:
 
     def test_translate_transcript_mock(self, mocker):
         """Test translating a transcript with mocked backend."""
-        from translate import translate_transcript, TranslationBackend, BACKENDS
+        from readtube.translate import translate_transcript, TranslationBackend, BACKENDS
 
         # Create mock backend
         mock_backend = mocker.MagicMock(spec=TranslationBackend)
@@ -1059,7 +1059,7 @@ class TestWriteArticleMain:
 
     def test_load_video_data_empty_file(self):
         """Test loading empty JSON file."""
-        from write_article import load_video_data
+        from readtube.article import load_video_data
         import json
 
         path = os.path.join(self.temp_dir, "empty.json")
@@ -1071,7 +1071,7 @@ class TestWriteArticleMain:
 
     def test_generate_prompt_with_long_transcript(self):
         """Test prompt generation truncates long transcripts."""
-        from write_article import generate_prompt_file
+        from readtube.article import generate_prompt_file
 
         # Create video data with very long transcript
         long_transcript = "word " * 100000  # Way more than 50000 chars
@@ -1094,7 +1094,7 @@ class TestGetVideosExtended:
 
     def test_video_info_structure(self):
         """Test VideoInfo has correct structure."""
-        from get_videos import VideoInfo
+        from readtube.videos import VideoInfo
 
         # Create a valid VideoInfo
         video: VideoInfo = {
@@ -1113,7 +1113,7 @@ class TestGetVideosExtended:
 
     def test_chapter_info_structure(self):
         """Test ChapterInfo has correct structure."""
-        from get_videos import ChapterInfo
+        from readtube.videos import ChapterInfo
 
         chapter: ChapterInfo = {
             "title": "Introduction",
@@ -1130,7 +1130,7 @@ class TestIntegrationsExtended:
 
     def test_readwise_highlight_format(self, mocker):
         """Test Readwise highlight formatting."""
-        from integrations import ReadwiseClient
+        from readtube.integrations import ReadwiseClient
 
         client = ReadwiseClient(token="test_token")
 
@@ -1157,7 +1157,7 @@ class TestCreateEpubExtendedFormats:
 
     def test_create_ebook_with_empty_article(self):
         """Test EPUB creation with empty article content."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [{
             "title": "Empty Article",
@@ -1173,7 +1173,7 @@ class TestCreateEpubExtendedFormats:
 
     def test_create_ebook_with_unicode(self):
         """Test EPUB creation with Unicode characters."""
-        from create_epub import create_ebook
+        from readtube.ebook import create_ebook
 
         articles = [{
             "title": "Unicode Test: 日本語 中文 한국어 العربية",
@@ -1189,7 +1189,7 @@ class TestCreateEpubExtendedFormats:
 
     def test_create_html_with_images(self):
         """Test HTML creation with image references."""
-        from create_epub import create_html
+        from readtube.ebook import create_html
 
         articles = [{
             "title": "Article with Images",
@@ -1212,7 +1212,7 @@ class TestBatchExtended:
 
     def test_progress_bar_with_tqdm(self, mocker):
         """Test progress bar uses tqdm when available."""
-        from batch import progress_bar
+        from readtube.batch import progress_bar
 
         items = [1, 2, 3, 4, 5]
         result = list(progress_bar(items, desc="Test"))
@@ -1221,7 +1221,7 @@ class TestBatchExtended:
 
     def test_retry_with_backoff_immediate_success(self):
         """Test retry returns immediately on success."""
-        from batch import retry_with_backoff
+        from readtube.batch import retry_with_backoff
         import time
 
         call_count = [0]
@@ -1251,14 +1251,14 @@ class TestConfigExtended:
 
     def test_config_channels_default(self):
         """Test Config has default channels."""
-        from config import Config
+        from readtube.config import Config
 
         config = Config()
         assert isinstance(config.channels, list)
 
     def test_config_typography_values(self):
         """Test TypographyConfig has expected values."""
-        from config import TypographyConfig
+        from readtube.config import TypographyConfig
 
         config = TypographyConfig()
         assert config.font_size == "1.1em"
@@ -1267,7 +1267,7 @@ class TestConfigExtended:
 
     def test_batch_job_defaults(self):
         """Test BatchJob has sensible defaults."""
-        from config import BatchJob
+        from readtube.config import BatchJob
 
         job = BatchJob(url="https://youtube.com/watch?v=test")
 
@@ -1282,7 +1282,7 @@ class TestAsyncFetchExtended:
     def test_fetch_videos_async_with_concurrency(self):
         """Test async fetch respects concurrency limit."""
         import asyncio
-        from async_fetch import AsyncFetcher
+        from readtube.async_fetch import AsyncFetcher
 
         async def test():
             fetcher = AsyncFetcher(max_concurrent=2)
@@ -1295,7 +1295,7 @@ class TestAsyncFetchExtended:
 
     def test_async_fetcher_executor(self):
         """Test AsyncFetcher creates executor."""
-        from async_fetch import AsyncFetcher
+        from readtube.async_fetch import AsyncFetcher
 
         fetcher = AsyncFetcher(max_concurrent=3, max_workers=4)
         assert fetcher.max_concurrent == 3

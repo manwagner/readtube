@@ -72,4 +72,4 @@ volumes:
 #
 # Batch processing:
 #   docker compose run --rm -v $(pwd)/config.yaml:/app/config.yaml:ro \
-#     readtube batch.py /app/config.yaml
+#     readtube -m readtube.batch /app/config.yaml

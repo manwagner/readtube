@@ -12,7 +12,7 @@ import requests
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-from config import logger
+from .config import logger
 
 
 class ReadwiseClient:

@@ -11,7 +11,7 @@ Backends:
 - openai: OpenAI-compatible APIs
 
 Usage:
-    from llm import generate_article
+    from readtube.llm import generate_article
 
     # Auto-select best available backend
     article = generate_article(transcript, title, channel)
@@ -27,7 +27,7 @@ from typing import Optional, Dict, Any
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from config import logger
+from .config import logger
 
 
 def _retry_sleep(attempt: int, base_delay: float = 0.5) -> None:

@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any, Callable
 from threading import Thread, Event
 
-from config import BatchConfig, logger
+from .config import BatchConfig, logger
 
 # Try to import schedule library
 try:
@@ -116,8 +116,8 @@ class Scheduler:
         Returns:
             List of new video data
         """
-        from get_videos import get_video_info, get_videos_from_playlist, is_playlist_url
-        from get_transcripts import get_transcript
+        from .videos import get_video_info, get_videos_from_playlist, is_playlist_url
+        from .transcripts import get_transcript
 
         batch_config = BatchConfig.load(self.config_path)
         new_videos = []

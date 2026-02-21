@@ -21,10 +21,11 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-import web_db as db
-import web_worker as worker
+from . import db
+from . import worker
 
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
+_PKG_DIR: str = os.path.dirname(BASE_DIR)  # readtube/ package root
 
 
 # ── Lifespan ──────────────────────────────────────────────
@@ -38,8 +39,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(title="Readtube", lifespan=lifespan)
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+app.mount("/static", StaticFiles(directory=os.path.join(_PKG_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(_PKG_DIR, "templates"))
 
 
 # ── Helpers ───────────────────────────────────────────────
@@ -143,13 +144,13 @@ async def article_reader(request: Request, video_id: str) -> Response:
     if not article:
         return HTMLResponse("<h1>Article not found</h1>", status_code=404)
 
-    from themes import get_theme
+    from ..themes import get_theme
     settings = _settings_context()
     theme_name = settings.get("theme", "default")
     try:
         theme = get_theme(theme_name)
     except ValueError:
-        from themes import THEME_DEFAULT
+        from ..themes import THEME_DEFAULT
         theme = THEME_DEFAULT
 
     return templates.TemplateResponse(request, "reader.html", {
@@ -179,7 +180,7 @@ async def article_download(
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
 
-    from create_epub import create_ebook
+    from ..ebook import create_ebook
 
     articles_data = [{
         "title": article["title"],
@@ -232,7 +233,7 @@ async def article_send_kindle(request: Request, video_id: str) -> Response:
     if not kindle_email or not smtp_host or not smtp_from:
         return HTMLResponse('<span class="text-error">Configure Kindle &amp; SMTP in Settings first</span>')
 
-    from create_epub import create_ebook
+    from ..ebook import create_ebook
     import smtplib
     from email.mime.multipart import MIMEMultipart
     from email.mime.base import MIMEBase
@@ -385,7 +386,7 @@ async def sources_delete(request: Request, source_id: int) -> Response:
 
 @app.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request) -> Response:
-    from themes import list_themes
+    from ..themes import list_themes
     return templates.TemplateResponse(request, "settings.html", {
         "settings": _settings_context(),
         "themes": list_themes(),
@@ -412,7 +413,7 @@ async def settings_save(request: Request) -> Response:
         except (ValueError, TypeError):
             pass
 
-    from themes import list_themes
+    from ..themes import list_themes
     return templates.TemplateResponse(request, "settings.html", {
         "settings": _settings_context(),
         "themes": list_themes(),
@@ -451,7 +452,7 @@ async def api_jobs(request: Request) -> Response:
 @app.get("/feed/rss")
 async def rss_feed() -> Response:
     from datetime import datetime
-    from rss import generate_rss_feed
+    from ..rss import generate_rss_feed
     articles = db.article_list(status="done")
     feed_articles = []
     for a in articles:
@@ -475,4 +476,11 @@ async def rss_feed() -> Response:
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", "8000"))
-    uvicorn.run("web:app", host="127.0.0.1", port=port, reload=True)
+    uvicorn.run("readtube.web.app:app", host="127.0.0.1", port=port, reload=True)
+
+
+def main():
+    """Entry point for readtube-web script."""
+    import uvicorn
+    port = int(os.environ.get("PORT", "8000"))
+    uvicorn.run("readtube.web.app:app", host="127.0.0.1", port=port, reload=True)

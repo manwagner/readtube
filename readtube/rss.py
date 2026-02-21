@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
 
-from config import get_config, logger
+from .config import get_config, logger
 
 
 def generate_rss_feed(

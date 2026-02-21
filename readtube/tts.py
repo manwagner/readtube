@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Optional, List
 from abc import ABC, abstractmethod
 
-from config import logger
+from .config import logger
 
 
 class TTSBackend(ABC):

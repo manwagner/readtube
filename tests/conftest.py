@@ -10,6 +10,8 @@ import shutil
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Also ensure readtube package is importable
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "readtube"))
 
 
 @pytest.fixture
@@ -129,6 +131,6 @@ def mock_transcript(mocker):
     mock_api.list = mocker.MagicMock(return_value=mock_transcript_list)
 
     # Patch at the location where it's used, not where it's defined
-    mocker.patch('get_transcripts.YouTubeTranscriptApi', return_value=mock_api)
+    mocker.patch('readtube.transcripts.YouTubeTranscriptApi', return_value=mock_api)
 
     return "Hello everyone welcome to this video today we will discuss testing"

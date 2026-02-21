@@ -15,8 +15,8 @@ import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-from config import logger
-from llm import generate_article, get_available_backends, ARTICLE_SYSTEM_PROMPT, ARTICLE_PROMPT_TEMPLATE
+from .config import logger
+from .llm import generate_article, get_available_backends, ARTICLE_SYSTEM_PROMPT, ARTICLE_PROMPT_TEMPLATE
 
 
 def load_video_data(path: str) -> Optional[Dict[str, Any]]:
@@ -158,7 +158,7 @@ def main():
         print(f"Article saved to: {output_path}")
     
     elif args.format in ["epub", "pdf", "html"]:
-        from create_epub import create_ebook
+        from .ebook import create_ebook
         
         articles = [{
             "title": title,
