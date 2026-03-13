@@ -1,325 +1,246 @@
-#!/usr/bin/env python3
-"""
-Fetch video info and transcript from YouTube.
-This script is designed to be used with Claude Code as a skill.
-
-Usage:
-    python fetch_transcript.py URL [URL2 ...]
-    python fetch_transcript.py --playlist PLAYLIST_URL
-    python fetch_transcript.py --channels
-    python fetch_transcript.py URL --lang es
-"""
+"""Readtube CLI — YouTube videos in, readable articles out."""
 
 from __future__ import annotations
 
-import sys
 import argparse
-import json
-import platform
-from importlib import metadata
-from typing import Optional, List, Dict, Any
-from .videos import get_video_info, get_videos_from_channels, get_videos_from_playlist, is_playlist_url
-from .transcripts import get_transcript, list_available_languages
-from .errors import (
-    ReadtubeError,
-    RateLimitError,
-    format_error_for_user,
-    retry_with_backoff,
-    YOUTUBE_RETRY_CONFIG,
-)
+import sys
+from typing import Optional
 
+from .config import Config, init_config, print_config, progress
+from .errors import ReadtubeError, EXIT_INVALID_ARGS, die
 
-def _pkg_version(name: str) -> str:
-    try:
-        return metadata.version(name)
-    except metadata.PackageNotFoundError:
-        return "not installed"
-    except Exception:
-        return "unknown"
+SUBCOMMANDS = {"playlist", "batch", "config", "cache"}
 
-
-def _print_health(show_only_version: bool = False) -> None:
-    """Print basic environment and dependency info."""
-    print(f"Python: {platform.python_version()}")
-    print("Readtube: local checkout")
-    deps = [
-        "yt-dlp",
-        "youtube-transcript-api",
-        "ebooklib",
-        "markdown",
-        "flask",
-        "weasyprint",
-    ]
-    if show_only_version:
-        return
-    print("Dependencies:")
-    for dep in deps:
-        print(f"  {dep}: {_pkg_version(dep)}")
-
-
-def fetch_single_video(url: str, lang: Optional[str] = None) -> Optional[Dict[str, Any]]:
-    """Fetch info and transcript for a single video with retry logic."""
-    print(f"Fetching video: {url}")
-
-    def _fetch():
-        video = get_video_info(url)
-        if not video:
-            raise ValueError("Could not fetch video info")
-        return video
-
-    try:
-        video = retry_with_backoff(
-            _fetch,
-            config=YOUTUBE_RETRY_CONFIG,
-            on_retry=lambda e, attempt, delay: print(f"  Retry {attempt}: {e}. Waiting {delay:.1f}s...")
-        )
-    except ReadtubeError as e:
-        print(format_error_for_user(e))
-        return None
-    except Exception as e:
-        print(f"  Error: Could not fetch video info: {e}")
-        return None
-
-    print(f"  Title: {video['title']}")
-    print(f"  Channel: {video['channel']}")
-
-    def _get_transcript():
-        return get_transcript(video['video_id'], lang=lang)
-
-    try:
-        transcript = retry_with_backoff(
-            _get_transcript,
-            config=YOUTUBE_RETRY_CONFIG,
-            on_retry=lambda e, attempt, delay: print(f"  Retry {attempt}: {e}. Waiting {delay:.1f}s...")
-        )
-    except ReadtubeError as e:
-        print(format_error_for_user(e))
-        return None
-    except Exception as e:
-        transcript = None
-
-    if not transcript:
-        print(f"  Error: Could not fetch transcript")
-        return None
-
-    print(f"  Transcript: {len(transcript.split())} words")
-
-    video['transcript'] = transcript
-    return video
-
-
-def fetch_from_playlist(playlist_url: str, lang: Optional[str] = None, max_videos: Optional[int] = None) -> List[Dict[str, Any]]:
-    """Fetch all videos from a playlist with retry logic."""
-    try:
-        videos = retry_with_backoff(
-            lambda: get_videos_from_playlist(playlist_url, max_videos=max_videos),
-            config=YOUTUBE_RETRY_CONFIG,
-            on_retry=lambda e, attempt, delay: print(f"  Retry {attempt}: {e}. Waiting {delay:.1f}s...")
-        )
-    except ReadtubeError as e:
-        print(format_error_for_user(e))
-        return []
-    except Exception as e:
-        print(f"Error fetching playlist: {e}")
-        return []
-
-    results = []
-    for video in videos:
-        print(f"\nFetching transcript for: {video['title'][:50]}...")
-
-        def _get_transcript(vid=video):
-            return get_transcript(vid['video_id'], lang=lang)
-
-        try:
-            transcript = retry_with_backoff(
-                _get_transcript,
-                config=YOUTUBE_RETRY_CONFIG,
-                on_retry=lambda e, attempt, delay: print(f"  Retry {attempt}: {e}. Waiting {delay:.1f}s...")
-            )
-        except ReadtubeError:
-            transcript = None
-        except Exception:
-            transcript = None
-
-        if transcript:
-            video['transcript'] = transcript
-            results.append(video)
-            print(f"  Got {len(transcript.split())} words")
-        else:
-            print(f"  No transcript available")
-
-    return results
-
-
-def fetch_from_channels(lang: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Fetch latest videos from configured channels with retry logic."""
-    try:
-        videos = retry_with_backoff(
-            get_videos_from_channels,
-            config=YOUTUBE_RETRY_CONFIG,
-            on_retry=lambda e, attempt, delay: print(f"  Retry {attempt}: {e}. Waiting {delay:.1f}s...")
-        )
-    except ReadtubeError as e:
-        print(format_error_for_user(e))
-        return []
-    except Exception as e:
-        print(f"Error fetching channels: {e}")
-        return []
-
-    results = []
-    for video in videos:
-        print(f"\nFetching transcript for: {video['title'][:50]}...")
-
-        def _get_transcript(vid=video):
-            return get_transcript(vid['video_id'], lang=lang)
-
-        try:
-            transcript = retry_with_backoff(
-                _get_transcript,
-                config=YOUTUBE_RETRY_CONFIG,
-                on_retry=lambda e, attempt, delay: print(f"  Retry {attempt}: {e}. Waiting {delay:.1f}s...")
-            )
-        except ReadtubeError:
-            transcript = None
-        except Exception:
-            transcript = None
-
-        if transcript:
-            video['transcript'] = transcript
-            results.append(video)
-            print(f"  Got {len(transcript.split())} words")
-        else:
-            print(f"  No transcript available")
-
-    return results
-
-
-def format_timestamp(seconds: float) -> str:
-    """Format seconds as MM:SS or HH:MM:SS."""
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    secs = int(seconds % 60)
-    if hours > 0:
-        return f"{hours}:{minutes:02d}:{secs:02d}"
-    return f"{minutes}:{secs:02d}"
-
-
-def print_video_data(videos: List[Dict[str, Any]], summary_mode: bool = False, output_dir: Optional[str] = None) -> None:
-    """Print video data for Claude Code to use."""
-    print("\n" + "=" * 60)
-    print("VIDEO DATA (for article writing):")
-    print("=" * 60)
-
-    if summary_mode:
-        print("\n[MODE: SUMMARY - Write a short 2-3 paragraph summary for each video]")
-    else:
-        print("\n[MODE: FULL ARTICLE - Write a complete magazine-style article]")
-
-    if output_dir:
-        print(f"[OUTPUT DIRECTORY: {output_dir}]")
-
-    for i, video in enumerate(videos):
-        print(f"\n--- VIDEO {i+1} ---")
-        print(f"TITLE: {video['title']}")
-        print(f"CHANNEL: {video['channel']}")
-        print(f"URL: {video['url']}")
-        if video.get('thumbnail'):
-            print(f"THUMBNAIL: {video['thumbnail']}")
-        print(f"DESCRIPTION:\n{video.get('description', 'No description')[:500]}")
-
-        # Print chapters if available
-        chapters = video.get('chapters', [])
-        if chapters:
-            print(f"\nCHAPTERS ({len(chapters)} chapters):")
-            for ch in chapters:
-                timestamp = format_timestamp(ch['start_time'])
-                print(f"  [{timestamp}] {ch['title']}")
-
-        print(f"\nTRANSCRIPT:\n{video['transcript']}")
-        print("\n" + "-" * 40)
-
-
-def write_video_json(videos: List[Dict[str, Any]], output_path: str) -> None:
-    """Write video data to a JSON file for downstream processing."""
-    payload = videos if len(videos) != 1 else videos[0]
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
-    print(f"Saved JSON: {output_path}")
-
-
-def main() -> Optional[List[Dict[str, Any]]]:
-    parser = argparse.ArgumentParser(
-        description="Fetch YouTube video info and transcripts",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python fetch_transcript.py "https://youtube.com/watch?v=abc123"
-  python fetch_transcript.py "https://youtube.com/playlist?list=PLxxx" --max 5
-  python fetch_transcript.py --channels
-  python fetch_transcript.py "https://youtube.com/watch?v=abc123" --lang es
-  python fetch_transcript.py VIDEO_ID --list-languages
+EPILOG = """\
+examples:
+  readtube https://youtube.com/watch?v=xxx          # article to stdout
+  readtube URL -o article.md                         # save as markdown
+  readtube URL -o article.epub                       # save as EPUB
+  readtube URL --mode tldr                           # 3-5 bullet points
+  readtube URL --mode transcript                     # raw transcript, no LLM
+  readtube URL --timestamps                          # linked timestamps
+  readtube playlist URL -o ./articles/               # process playlist
+  readtube batch urls.txt -o ./out/                  # batch from file
+  readtube config                                    # show config
+  readtube config --init                             # create config file
+  readtube cache stats                               # cache info
+  readtube cache clear                               # wipe cache
 """
+
+
+def _add_common_args(parser: argparse.ArgumentParser) -> None:
+    """Add flags shared by single/playlist/batch commands."""
+    parser.add_argument("-o", "--output", help="output path")
+    parser.add_argument("--format", choices=["md", "epub", "pdf", "html"], help="output format")
+    parser.add_argument("--mode", choices=["article", "tldr", "takeaways", "transcript"], help="output mode")
+    parser.add_argument("--timestamps", action="store_true", help="include linked timestamps")
+    parser.add_argument("--no-chapters", action="store_true", help="disable chapter splitting")
+    parser.add_argument("--lang", help="preferred transcript language code")
+    parser.add_argument("--backend", choices=["ollama", "claude", "openai"], help="LLM backend")
+    parser.add_argument("--model", help="model name")
+    parser.add_argument("--theme", default="default", help="theme for HTML/EPUB output")
+    parser.add_argument("-v", "--verbose", action="store_true", help="show progress even when piping")
+    parser.add_argument("-q", "--quiet", action="store_true", help="suppress all progress")
+
+
+def _build_single_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="readtube",
+        description="Turn YouTube videos into readable articles",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=EPILOG,
+    )
+    parser.add_argument("url", help="YouTube video URL")
+    _add_common_args(parser)
+    return parser
+
+
+def _build_playlist_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="readtube playlist")
+    parser.add_argument("url", help="YouTube playlist URL")
+    parser.add_argument("--max", type=int, help="max videos to process")
+    _add_common_args(parser)
+    return parser
+
+
+def _build_batch_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="readtube batch")
+    parser.add_argument("file", help="text file with one URL per line")
+    _add_common_args(parser)
+    return parser
+
+
+def _build_config_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="readtube config")
+    parser.add_argument("--init", action="store_true", help="create default config file")
+    return parser
+
+
+def _build_cache_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="readtube cache")
+    parser.add_argument("action", nargs="?", choices=["clear", "stats"], help="cache action")
+    return parser
+
+
+def main(argv: Optional[list[str]] = None) -> None:
+    args_list = argv if argv is not None else sys.argv[1:]
+
+    # No arguments — show help
+    if not args_list:
+        _build_single_parser().print_help()
+        sys.exit(EXIT_INVALID_ARGS)
+
+    # Route based on first argument
+    first = args_list[0]
+
+    try:
+        if first == "playlist":
+            args = _build_playlist_parser().parse_args(args_list[1:])
+            verbose = _should_show_progress(args)
+            _cmd_playlist(args, verbose)
+
+        elif first == "batch":
+            args = _build_batch_parser().parse_args(args_list[1:])
+            verbose = _should_show_progress(args)
+            _cmd_batch(args, verbose)
+
+        elif first == "config":
+            args = _build_config_parser().parse_args(args_list[1:])
+            _cmd_config(args)
+
+        elif first == "cache":
+            args = _build_cache_parser().parse_args(args_list[1:])
+            _cmd_cache(args)
+
+        elif first in ("-h", "--help"):
+            _build_single_parser().print_help()
+            sys.exit(0)
+
+        else:
+            # Treat as a URL (single video mode)
+            args = _build_single_parser().parse_args(args_list)
+            verbose = _should_show_progress(args)
+            _cmd_single(args, verbose)
+
+    except ReadtubeError as e:
+        die(e)
+    except KeyboardInterrupt:
+        print("\ninterrupted", file=sys.stderr)
+        sys.exit(130)
+
+
+def _should_show_progress(args) -> bool:
+    if getattr(args, "quiet", False):
+        return False
+    if getattr(args, "verbose", False):
+        return True
+    if getattr(args, "output", None):
+        return True
+    return sys.stderr.isatty()
+
+
+def _cmd_single(args, verbose: bool) -> None:
+    from .pipeline import process_single
+
+    config = Config.load()
+    result = process_single(
+        url=args.url,
+        config=config,
+        output_path=args.output,
+        mode=args.mode,
+        fmt=args.format,
+        timestamps=args.timestamps,
+        use_chapters=not args.no_chapters,
+        lang=args.lang,
+        cli_backend=args.backend,
+        cli_model=args.model,
+        verbose=verbose,
+        theme=args.theme,
     )
 
-    parser.add_argument("urls", nargs="*", help="Video or playlist URLs")
-    parser.add_argument("--channels", action="store_true", help="Fetch from configured channels")
-    parser.add_argument("--lang", help="Preferred transcript language (e.g., 'en', 'es', 'de')")
-    parser.add_argument("--max", type=int, help="Max videos to fetch from playlist")
-    parser.add_argument("--list-languages", action="store_true", help="List available languages for a video")
-    parser.add_argument("--output-dir", "-o", help="Output directory for generated ebooks")
-    parser.add_argument("--summary", action="store_true", help="Request short summary instead of full article")
-    parser.add_argument("--output-json", help="Write fetched video data to a JSON file")
-    parser.add_argument("--version", action="store_true", help="Show version info and exit")
-    parser.add_argument("--health", action="store_true", help="Check optional dependencies and exit")
+    # Print to stdout if no output file
+    if not args.output and result:
+        # If streaming already printed to TTY, skip
+        if not (sys.stdout.isatty() and args.mode != "transcript"):
+            print(result)
 
-    args = parser.parse_args()
 
-    if args.version or args.health:
-        _print_health(show_only_version=args.version and not args.health)
-        return
+def _cmd_playlist(args, verbose: bool) -> None:
+    from pathlib import Path
+    from .pipeline import process_playlist
 
-    # List languages mode
-    if args.list_languages and args.urls:
-        video_id = args.urls[0]
-        # Extract video ID if full URL
-        if "youtube.com" in video_id or "youtu.be" in video_id:
-            video = get_video_info(video_id)
-            if video:
-                video_id = video['video_id']
+    config = Config.load()
+    output_dir = args.output or "."
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        print(f"Available languages for {video_id}:")
-        languages = list_available_languages(video_id)
-        for lang in languages:
-            gen = " (auto-generated)" if lang['is_generated'] else ""
-            print(f"  {lang['code']}: {lang['name']}{gen}")
-        return
+    results = process_playlist(
+        url=args.url,
+        config=config,
+        output_dir=output_dir,
+        max_videos=args.max,
+        mode=args.mode,
+        fmt=args.format,
+        timestamps=args.timestamps,
+        use_chapters=not args.no_chapters,
+        lang=args.lang,
+        cli_backend=args.backend,
+        cli_model=args.model,
+        verbose=verbose,
+        theme=args.theme,
+    )
 
-    # Determine mode
-    if args.channels:
-        videos = fetch_from_channels(lang=args.lang)
-    elif args.urls:
-        videos = []
-        for url in args.urls:
-            if is_playlist_url(url):
-                playlist_videos = fetch_from_playlist(url, lang=args.lang, max_videos=args.max)
-                videos.extend(playlist_videos)
-            else:
-                video = fetch_single_video(url, lang=args.lang)
-                if video:
-                    videos.append(video)
+    progress(f"\nprocessed {len(results)} videos", verbose)
+
+
+def _cmd_batch(args, verbose: bool) -> None:
+    from pathlib import Path
+    from .pipeline import process_batch
+
+    config = Config.load()
+    output_dir = args.output or "."
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    results = process_batch(
+        urls_file=args.file,
+        config=config,
+        output_dir=output_dir,
+        mode=args.mode,
+        fmt=args.format,
+        timestamps=args.timestamps,
+        use_chapters=not args.no_chapters,
+        lang=args.lang,
+        cli_backend=args.backend,
+        cli_model=args.model,
+        verbose=verbose,
+        theme=args.theme,
+    )
+
+    progress(f"\nprocessed {len(results)} URLs", verbose)
+
+
+def _cmd_config(args) -> None:
+    if args.init:
+        init_config()
     else:
-        parser.print_help()
-        sys.exit(1)
-
-    if not videos:
-        print("\nNo videos with transcripts found.")
-        sys.exit(1)
-
-    print_video_data(videos, summary_mode=args.summary, output_dir=args.output_dir)
-    if args.output_json:
-        write_video_json(videos, args.output_json)
-    return videos
+        config = Config.load()
+        print_config(config)
 
 
-if __name__ == "__main__":
-    main()
+def _cmd_cache(args) -> None:
+    from .cache import Cache
+    config = Config.load()
+    cache = Cache(config.cache.dir, config.cache.ttl_days)
+
+    if args.action == "clear":
+        count = cache.clear()
+        print(f"cleared {count} cached entries", file=sys.stderr)
+    elif args.action == "stats":
+        stats = cache.stats()
+        print(f"cache dir: {stats['cache_dir']}")
+        print(f"entries: {stats['total_entries']}")
+        print(f"size: {stats['total_size_kb']} KB")
+        for name, info in stats["by_type"].items():
+            print(f"  {name}: {info['count']} entries ({info['size_kb']} KB)")
+    else:
+        print("usage: readtube cache [clear|stats]", file=sys.stderr)
+        sys.exit(EXIT_INVALID_ARGS)

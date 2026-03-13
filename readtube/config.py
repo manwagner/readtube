@@ -1,191 +1,248 @@
-"""
-Central configuration for Readtube.
-Handles config file loading, defaults, and validation.
-"""
+"""TOML-based configuration with CLI flag override support."""
+
+from __future__ import annotations
 
 import os
-import json
-import logging
+import sys
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass, field, asdict
+from typing import Optional
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('readtube')
-
-# Default paths
-CONFIG_DIR = Path.home() / '.config' / 'readtube'
-CONFIG_FILE = CONFIG_DIR / 'config.json'
-CACHE_DIR = Path(__file__).parent / '.transcript_cache'
-OUTPUT_DIR = Path.cwd()
+CONFIG_DIR = Path.home() / ".config" / "readtube"
+CONFIG_FILE = CONFIG_DIR / "config.toml"
+CACHE_DIR = Path.home() / ".cache" / "readtube"
 
 
 @dataclass
-class TypographyConfig:
-    """Typography settings based on Practical Typography."""
-    font_family: str = "Charter, Georgia, serif"
-    font_size: str = "1.1em"
-    line_height: float = 1.4
-    max_width: str = "65ch"
-    heading_scale: List[float] = field(default_factory=lambda: [1.5, 1.2, 1.05, 1.0])
+class LLMConfig:
+    backend: Optional[str] = None
+    model: Optional[str] = None
+    api_key_env: Optional[str] = None
+    url: Optional[str] = None
 
 
 @dataclass
 class OutputConfig:
-    """Output format settings."""
-    default_format: str = "epub"
-    output_dir: str = "."
-    include_cover: bool = True
-    include_toc: bool = True
-    page_size: str = "A5"  # For PDF
+    default_format: str = "md"
+    default_mode: str = "article"
+    timestamps: bool = False
+    chapters: bool = True
 
 
 @dataclass
-class FetchConfig:
-    """Fetching and caching settings."""
-    cache_enabled: bool = True
-    cache_days: int = 7
-    retry_attempts: int = 3
-    retry_delay: float = 1.0
-    preferred_language: Optional[str] = None
-    preserve_timestamps: bool = False
+class CacheConfig:
+    dir: str = ""
+    ttl_days: int = 30
+
+    def __post_init__(self):
+        if not self.dir:
+            self.dir = str(CACHE_DIR)
 
 
 @dataclass
 class Config:
-    """Main configuration class."""
-    typography: TypographyConfig = field(default_factory=TypographyConfig)
+    llm: LLMConfig = field(default_factory=LLMConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
-    fetch: FetchConfig = field(default_factory=FetchConfig)
-    channels: List[str] = field(default_factory=list)
+    cache: CacheConfig = field(default_factory=CacheConfig)
 
     @classmethod
-    def load(cls, path: Optional[Path] = None) -> 'Config':
-        """Load config from file or return defaults."""
+    def load(cls, path: Optional[Path] = None) -> Config:
+        """Load config from TOML file, or return defaults."""
         config_path = path or CONFIG_FILE
+        config = cls()
 
-        if config_path.exists():
-            try:
-                with open(config_path, 'r') as f:
-                    data = json.load(f)
-                return cls.from_dict(data)
-            except Exception as e:
-                logger.warning(f"Failed to load config from {config_path}: {e}")
+        if not config_path.exists():
+            return config
 
-        return cls()
+        try:
+            text = config_path.read_text()
+            data = _parse_toml(text)
+        except Exception:
+            return config
 
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Config':
-        """Create config from dictionary."""
-        return cls(
-            typography=TypographyConfig(**data.get('typography', {})),
-            output=OutputConfig(**data.get('output', {})),
-            fetch=FetchConfig(**data.get('fetch', {})),
-            channels=data.get('channels', []),
+        if "llm" in data:
+            llm = data["llm"]
+            config.llm = LLMConfig(
+                backend=llm.get("backend"),
+                model=llm.get("model"),
+                api_key_env=llm.get("api_key_env"),
+                url=llm.get("url"),
+            )
+
+        if "output" in data:
+            out = data["output"]
+            config.output = OutputConfig(
+                default_format=out.get("default_format", "md"),
+                default_mode=out.get("default_mode", "article"),
+                timestamps=out.get("timestamps", False),
+                chapters=out.get("chapters", True),
+            )
+
+        if "cache" in data:
+            c = data["cache"]
+            config.cache = CacheConfig(
+                dir=c.get("dir", str(CACHE_DIR)),
+                ttl_days=c.get("ttl_days", 30),
+            )
+
+        return config
+
+
+def _parse_toml(text: str) -> dict:
+    """Parse TOML using stdlib (3.11+) or tomli fallback."""
+    try:
+        import tomllib
+        return tomllib.loads(text)
+    except ImportError:
+        pass
+    try:
+        import tomli
+        return tomli.loads(text)
+    except ImportError:
+        raise ImportError("Python 3.11+ or 'tomli' package required for TOML config")
+
+
+def resolve_llm_config(
+    config: Config,
+    cli_backend: Optional[str] = None,
+    cli_model: Optional[str] = None,
+) -> tuple[str, str, Optional[str]]:
+    """Resolve LLM backend, model, and API key from CLI flags > env > config > auto-detect.
+
+    Returns:
+        (backend, model, api_key) tuple. Raises LLMError if nothing found.
+    """
+    from .errors import LLMError
+
+    # 1. CLI flags
+    backend = cli_backend
+    model = cli_model
+
+    # 2. Environment variables
+    if not backend:
+        backend = os.environ.get("READTUBE_BACKEND")
+    if not model:
+        model = os.environ.get("READTUBE_MODEL")
+
+    # 3. Config file
+    if not backend and config.llm.backend:
+        backend = config.llm.backend
+    if not model and config.llm.model:
+        model = config.llm.model
+
+    # 4. Auto-detect
+    if not backend:
+        backend = _auto_detect_backend()
+
+    if not backend:
+        raise LLMError(
+            "none",
+            "no LLM backend configured.\n"
+            "  → set ANTHROPIC_API_KEY, or run: readtube config --init",
         )
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert config to dictionary."""
-        return {
-            'typography': asdict(self.typography),
-            'output': asdict(self.output),
-            'fetch': asdict(self.fetch),
-            'channels': self.channels,
+    # Resolve API key from env var name in config
+    api_key = None
+    if config.llm.api_key_env:
+        api_key = os.environ.get(config.llm.api_key_env)
+
+    # Fallback: check common env vars based on backend
+    if not api_key:
+        if backend == "claude":
+            api_key = os.environ.get("ANTHROPIC_API_KEY")
+        elif backend == "openai":
+            api_key = os.environ.get("OPENAI_API_KEY")
+
+    # Default models per backend
+    if not model:
+        defaults = {
+            "ollama": "llama3.2",
+            "claude": "claude-sonnet-4-20250514",
+            "openai": "gpt-4o",
         }
+        model = defaults.get(backend, "llama3.2")
 
-    def save(self, path: Optional[Path] = None) -> None:
-        """Save config to file."""
-        config_path = path or CONFIG_FILE
-        config_path.parent.mkdir(parents=True, exist_ok=True)
+    # Resolve URL
+    url = config.llm.url
+    if backend == "ollama" and not url:
+        url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 
-        with open(config_path, 'w') as f:
-            json.dump(self.to_dict(), f, indent=2)
-
-        logger.info(f"Config saved to {config_path}")
+    return backend, model, api_key
 
 
-@dataclass
-class BatchJob:
-    """A single job in a batch config."""
-    url: str
-    title: Optional[str] = None
-    output_format: str = "epub"
-    output_path: Optional[str] = None
-    language: Optional[str] = None
-    summary_mode: bool = False
+def _auto_detect_backend() -> Optional[str]:
+    """Try to auto-detect an available LLM backend."""
+    # Check if Ollama is running
+    try:
+        import urllib.request
+        req = urllib.request.Request("http://localhost:11434/api/tags")
+        with urllib.request.urlopen(req, timeout=2):
+            return "ollama"
+    except Exception:
+        pass
+
+    # Check for API keys
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "claude"
+    if os.environ.get("OPENAI_API_KEY"):
+        return "openai"
+
+    return None
 
 
-@dataclass
-class BatchConfig:
-    """Batch processing configuration."""
-    jobs: List[BatchJob] = field(default_factory=list)
-    output_dir: str = "."
-    default_format: str = "epub"
-    default_language: Optional[str] = None
-
-    @classmethod
-    def load(cls, path: Path) -> 'BatchConfig':
-        """Load batch config from YAML or JSON file."""
-        if not path.exists():
-            raise FileNotFoundError(f"Batch config not found: {path}")
-
-        with open(path, 'r') as f:
-            if path.suffix in ('.yml', '.yaml'):
-                try:
-                    import yaml
-                    data = yaml.safe_load(f)
-                except ImportError:
-                    raise ImportError("PyYAML required for YAML config: pip install pyyaml")
-            else:
-                data = json.load(f)
-
-        return cls.from_dict(data)
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'BatchConfig':
-        """Create batch config from dictionary."""
-        jobs = []
-        for job_data in data.get('jobs', []):
-            if isinstance(job_data, str):
-                # Simple URL string
-                jobs.append(BatchJob(url=job_data))
-            else:
-                jobs.append(BatchJob(**job_data))
-
-        return cls(
-            jobs=jobs,
-            output_dir=data.get('output_dir', '.'),
-            default_format=data.get('default_format', 'epub'),
-            default_language=data.get('default_language'),
-        )
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        return {
-            'jobs': [asdict(job) for job in self.jobs],
-            'output_dir': self.output_dir,
-            'default_format': self.default_format,
-            'default_language': self.default_language,
-        }
+def print_config(config: Config) -> None:
+    """Print current configuration to stdout."""
+    print("[llm]")
+    print(f"  backend = {config.llm.backend or '(auto-detect)'}")
+    print(f"  model = {config.llm.model or '(default)'}")
+    if config.llm.url:
+        print(f"  url = {config.llm.url}")
+    print()
+    print("[output]")
+    print(f"  default_format = {config.output.default_format}")
+    print(f"  default_mode = {config.output.default_mode}")
+    print(f"  timestamps = {config.output.timestamps}")
+    print(f"  chapters = {config.output.chapters}")
+    print()
+    print("[cache]")
+    print(f"  dir = {config.cache.dir}")
+    print(f"  ttl_days = {config.cache.ttl_days}")
 
 
-# Global config instance
-_config: Optional[Config] = None
+DEFAULT_CONFIG_TOML = """\
+# Readtube configuration
+# See: https://github.com/unbalancedparentheses/readtube
+
+[llm]
+# backend = "ollama"          # ollama | claude | openai
+# model = "llama3.2"          # model name
+# api_key_env = "ANTHROPIC_API_KEY"  # env var name (never the key itself)
+# url = "http://localhost:11434"     # for ollama or openai-compatible
+
+[output]
+default_format = "md"          # md | epub | pdf | html
+default_mode = "article"       # article | tldr | takeaways | transcript
+timestamps = false
+chapters = true
+
+[cache]
+# dir = "~/.cache/readtube"
+ttl_days = 30
+"""
 
 
-def get_config() -> Config:
-    """Get the global config instance."""
-    global _config
-    if _config is None:
-        _config = Config.load()
-    return _config
+def init_config() -> Path:
+    """Create default config file. Returns path."""
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    if CONFIG_FILE.exists():
+        print(f"config already exists: {CONFIG_FILE}", file=sys.stderr)
+        return CONFIG_FILE
+    CONFIG_FILE.write_text(DEFAULT_CONFIG_TOML)
+    print(f"created: {CONFIG_FILE}", file=sys.stderr)
+    return CONFIG_FILE
 
 
-def set_config(config: Config) -> None:
-    """Set the global config instance."""
-    global _config
-    _config = config
+def progress(msg: str, verbose: bool = True) -> None:
+    """Print progress message to stderr."""
+    if verbose:
+        print(msg, file=sys.stderr)
