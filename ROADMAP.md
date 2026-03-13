@@ -1,185 +1,344 @@
 # Readtube Roadmap
 
-## Done
+**Vision:** The best way to turn video into text you actually want to read.
 
-- [x] Core CLI: `readtube URL` → article to stdout
-- [x] Output formats: markdown, EPUB, PDF, HTML
-- [x] Output modes: article, tldr, takeaways, transcript
-- [x] 3 LLM backends: Ollama, Claude, OpenAI (all with streaming)
-- [x] Auto-detection of available LLM backend
-- [x] TOML config with CLI flag overrides
-- [x] Chapter-aware transcript splitting
-- [x] Timestamp linking (`--timestamps`)
-- [x] Playlist and batch processing
-- [x] Filesystem transcript cache with TTL
-- [x] Proper Unix behavior (stdout=content, stderr=progress)
-- [x] 87 tests, 13 source files, 2 core dependencies
+Not a note-taking app. Not a transcription service. A tool that produces
+articles good enough that you forget they started as videos. Local-first,
+Unix-native, zero accounts.
+
+**Unique edge:** Timestamp-linked articles. Every claim traces back to
+the exact moment in the video. No other tool does this.
 
 ---
 
-## Phase 1 — Content Quality (highest impact)
+## What's Built
 
-The output quality is the product. Everything else is plumbing.
+| Feature | Status | Command |
+|---------|--------|---------|
+| Single video → article | Done | `readtube URL` |
+| Multiple output modes | Done | `--mode article\|tldr\|takeaways\|transcript` |
+| Output formats | Done | `-o file.md\|.epub\|.pdf\|.html` |
+| Streaming LLM output | Done | Streams to terminal in real time |
+| 3 LLM backends | Done | Ollama, Claude, OpenAI (auto-detected) |
+| Chapter-aware splitting | Done | Uses video chapters for article structure |
+| Timestamp linking | Done | `--timestamps` → `[4:32](youtube.com/...&t=272)` |
+| Playlist processing | Done | `readtube playlist URL` |
+| Batch processing | Done | `readtube batch urls.txt` |
+| TOML config | Done | `~/.config/readtube/config.toml` |
+| Transcript caching | Done | Filesystem JSON, configurable TTL |
+| Unix pipeline support | Done | stdout=content, stderr=progress, exit codes |
 
-### Transcript cleaning
-- [ ] Strip YouTube auto-caption artifacts: repeated words, "[music]", "[applause]"
-- [ ] Remove filler words and stutters (uh, um, like, you know)
-- [ ] Normalize whitespace and punctuation from auto-captions
-- [ ] Detect and merge broken sentences from caption segmentation
-
-### SponsorBlock integration
-- [ ] Query SponsorBlock API (free, community-maintained) for sponsor segments
-- [ ] Strip sponsor reads, self-promotion, and intro/outro before LLM processing
-- [ ] Flag "interaction reminder" segments (like/subscribe) for removal
-- [ ] Fallback gracefully when SponsorBlock has no data for a video
-
-### Genre-aware prompts
-- [ ] Auto-detect video genre: interview, lecture, tutorial, debate, documentary, podcast
-- [ ] Use genre-specific prompt templates (an interview needs speaker attribution, a tutorial needs step-by-step structure, a lecture needs concept hierarchy)
-- [ ] Allow `--genre` flag to override auto-detection
-- [ ] Test each genre prompt against 10+ real videos and grade output quality
-
-### Prompt iteration
-- [ ] Build a test suite of 50+ videos across genres
-- [ ] Grade output on: accuracy, readability, structure, completeness
-- [ ] A/B test prompt variations systematically
-- [ ] Document which prompts work best for which backends/models
+13 source files. 2,287 lines. 87 tests. 2 core dependencies.
 
 ---
 
-## Phase 2 — Obsidian & Knowledge Workflow
+## Phase 1 — Content Quality
 
-Most target users are note-takers. Meet them where they are.
+**Why first:** Output quality IS the product. A tool that produces bad
+articles is worthless no matter how many features it has. Every hour
+spent here is worth 10 hours spent anywhere else.
 
-### Obsidian frontmatter
-- [ ] `--frontmatter` flag that outputs YAML frontmatter: title, channel, date, URL, duration, tags
-- [ ] Auto-generate tags from content (top 3-5 topics)
-- [ ] Include video thumbnail as a markdown image reference
-- [ ] Output reading time estimate in frontmatter
+**Success metric:** Run readtube against 50 videos across genres.
+A human rates each output 1-5 on accuracy, readability, and structure.
+Average score should be 4+.
 
-### Obsidian vault integration
-- [ ] `readtube URL -o ~/Obsidian/Videos/` auto-names file as `{Channel} - {Title}.md`
-- [ ] Detect existing files and skip (avoid duplicates in vault)
-- [ ] Support `--template` for custom output templates (Obsidian callouts, dataview fields, etc.)
+### 1.1 Transcript Cleaning
 
-### Daily digest workflow
-- [ ] Document the cron + readtube + Obsidian/Kindle workflow
-- [ ] `readtube feed channels.txt` — process new videos from a list of channels (check against cache to skip already-processed)
-- [ ] Output summary index file for batch runs (links to all generated articles)
+Raw YouTube auto-captions are noisy. The LLM wastes tokens processing
+garbage and sometimes reproduces it in the output.
 
----
+```
+Before: "so uh what we're we're going to do is um [music] basically uh"
+After:  "What we're going to do is basically"
+```
 
-## Phase 3 — Long Video Handling
+- [ ] Strip caption artifacts: `[music]`, `[applause]`, `[laughter]`, repeated words
+- [ ] Remove filler: uh, um, like, you know, basically, right, so (when used as filler)
+- [ ] Merge broken sentences from caption segmentation boundaries
+- [ ] Normalize punctuation and whitespace
+- [ ] Add `--raw` flag to skip cleaning (for debugging or when manual captions are good)
 
-A 3-hour podcast should work as well as a 10-minute explainer.
+Effort: Small. One new module, ~100 lines. Regex + heuristics.
 
-### Smart chunking
-- [ ] Detect topic boundaries using sentence similarity when chapters aren't available
-- [ ] Split long transcripts into coherent chunks that fit within LLM context windows
-- [ ] Generate per-chunk summaries, then synthesize into a final article
-- [ ] Show progress per chunk during generation
+### 1.2 SponsorBlock Integration
 
-### Multi-pass generation
-- [ ] First pass: structured outline from full transcript
-- [ ] Second pass: expand each section with detail from relevant transcript chunks
-- [ ] Combine into final article with consistent voice and flow
-- [ ] `--depth` flag: shallow (single pass) vs deep (multi-pass)
+The kamikaze test video included a full "Heroes of History" ad read in
+its takeaways. Sponsor segments should never reach the LLM.
 
-### Context window management
-- [ ] Detect model context limits per backend
-- [ ] Auto-select chunking strategy based on transcript length vs context window
-- [ ] Warn when transcript is too long for the selected model
+[SponsorBlock API](https://wiki.sponsor.ajay.app/w/API_Docs) is free,
+community-maintained, and covers most popular videos.
 
----
+- [ ] Query SponsorBlock for segment timestamps before processing
+- [ ] Strip categories: sponsor, selfpromo, interaction (like/subscribe), intro, outro
+- [ ] Remove matching transcript segments by timestamp range
+- [ ] `--no-sponsorblock` flag to disable
+- [ ] Graceful fallback when API is unreachable or has no data
 
-## Phase 4 — Distribution & Packaging
+Effort: Small. One HTTP call, timestamp-range filtering on transcript segments.
 
-Go from "works on my machine" to "anyone can install it."
+### 1.3 Genre-Aware Prompts
 
-### PyPI release
-- [ ] Clean up pyproject.toml metadata
-- [ ] Write a proper README with install instructions and examples
-- [ ] Publish to PyPI: `pip install readtube`
-- [ ] Set up GitHub Actions for automated release on tag
+An interview, a tutorial, and a documentary need fundamentally different
+article structures. A single generic prompt can't serve all three well.
 
-### Homebrew / Nix
-- [ ] Create Homebrew formula
-- [ ] Update shell.nix for the new simplified package
-- [ ] Document installation for each method
+| Genre | What the article needs |
+|-------|----------------------|
+| Interview/podcast | Speaker attribution, Q&A flow, key quotes |
+| Tutorial | Step-by-step structure, code blocks, prerequisites |
+| Lecture | Concept hierarchy, definitions, logical progression |
+| Documentary | Narrative arc, chronology, context |
+| Debate/panel | Multiple viewpoints, areas of agreement/disagreement |
+| Conference talk | Problem → solution → results, speaker bio context |
 
-### Single binary (optional)
-- [ ] Investigate PyInstaller or Nuitka for standalone binary
-- [ ] Evaluate tradeoffs (binary size vs install simplicity)
+- [ ] Auto-detect genre from title, description, channel, and transcript patterns
+- [ ] 6 genre-specific prompt templates
+- [ ] `--genre` flag to override detection
+- [ ] `--list-genres` to show available genres
 
----
+Effort: Medium. Genre detection is heuristic. Prompt tuning is iterative.
 
-## Phase 5 — Kindle & E-Reader Pipeline
+### 1.4 Prompt Evaluation Framework
 
-Reading on e-readers is a primary use case. Make it frictionless.
+Prompts can't be improved without measurement.
 
-### Send-to-Kindle
-- [ ] `--kindle` flag that generates EPUB and emails to Kindle address
-- [ ] Configure Kindle email in config.toml
-- [ ] Support Amazon's Send to Kindle email API
-- [ ] Batch send: process playlist → email all as a single digest EPUB
+- [ ] Curate 50+ test videos: 8-10 per genre, ranging from 5 min to 2+ hours
+- [ ] Build `readtube eval` command that runs all test videos and saves outputs
+- [ ] Score rubric: accuracy (are facts correct?), readability (would you read this?), structure (headings/flow make sense?), completeness (key points covered?)
+- [ ] Track scores over time as prompts are iterated
+- [ ] Document which models produce best results per genre
 
-### EPUB quality
-- [ ] Improve EPUB typography and metadata
-- [ ] Embed cover images properly (currently works but could be better)
-- [ ] Support custom CSS for EPUB via config
-- [ ] Test on actual Kindle devices and Kobo readers
+Effort: Medium. The framework is simple. The iteration is ongoing.
 
 ---
 
-## Phase 6 — Cross-Video Intelligence
+## Phase 2 — Long Videos
 
-This is where it gets interesting. Once you have 50+ articles, the collection becomes more valuable than any single article.
+**Why second:** Videos over 1 hour are the highest-value content
+(podcasts, lectures, conference talks) but currently produce the worst
+output because they overflow LLM context windows or get truncated.
 
-### Search across articles
-- [ ] `readtube search "topic"` — full-text search across all generated articles
-- [ ] Index articles at generation time (SQLite FTS5 or tantivy)
-- [ ] Return relevant snippets with source video links
+**Success metric:** A 3-hour podcast produces an article as good as
+a 15-minute video does today.
 
-### Q&A over your library
-- [ ] `readtube ask "What did these videos say about X?"` — RAG over your article collection
-- [ ] Simple approach first: stuff top-5 relevant chunks into LLM context
-- [ ] Optional: local vector store for embedding-based retrieval
-- [ ] Cite sources: include video title and timestamp for each claim
+### 2.1 Context Window Management
 
-### Related content linking
-- [ ] After generating an article, find related articles in your library
-- [ ] Append "Related" section with links to similar content
-- [ ] Use for Obsidian backlinks and graph view
+- [ ] Know each model's context limit: Ollama (query `/api/show`), Claude (known per model), OpenAI (known per model)
+- [ ] Count tokens before sending (tiktoken for OpenAI, estimate for others)
+- [ ] When transcript fits: send as-is (current behavior)
+- [ ] When transcript doesn't fit: auto-trigger chunked generation
+- [ ] `--max-tokens` flag to override context detection
+
+### 2.2 Chunked Generation
+
+When the transcript exceeds the context window:
+
+1. Split transcript at chapter boundaries (preferred) or topic boundaries
+2. Generate a section summary for each chunk
+3. Combine summaries into a coherent article with a synthesis pass
+4. Preserve chapter headings and timestamp references across chunks
+
+- [ ] Implement sliding-window chunking with overlap
+- [ ] Chapter-boundary splitting (already exists, needs refinement)
+- [ ] Topic-boundary detection for unchaptered videos (sentence similarity or paragraph-level heuristics)
+- [ ] Synthesis pass that reads all chunk summaries and produces final article
+- [ ] Show per-chunk progress: `generating [3/7]...`
+
+### 2.3 Multi-Pass Generation
+
+For the best quality on long content:
+
+- [ ] `--depth deep` flag: outline pass → section pass → synthesis pass
+- [ ] Pass 1: Generate structured outline from full transcript (or chunked summaries)
+- [ ] Pass 2: Expand each outline section using relevant transcript chunks
+- [ ] Pass 3: Edit pass for consistency, flow, and deduplication
+- [ ] Default to single-pass for short videos, multi-pass for 60+ minutes
+
+Effort: Hard. This is the most complex feature. Chunking strategy and
+synthesis quality need careful tuning.
 
 ---
 
-## Phase 7 — Alternative Inputs
+## Phase 3 — Knowledge Workflow
 
-YouTube isn't the only source of video content worth reading.
+**Why third:** Once content quality is high and long videos work, users
+will accumulate articles. Help them build a personal knowledge base.
 
-### Podcast support
-- [ ] Accept podcast RSS feed URLs
-- [ ] Download audio, transcribe via Whisper (local) or cloud API
-- [ ] Same pipeline: transcript → article → output
+**Success metric:** A user with 100+ articles can find any piece of
+information in under 10 seconds.
 
-### Local video files
-- [ ] `readtube file.mp4` — transcribe local video with Whisper
-- [ ] Support common formats: mp4, mkv, webm, mp3
-- [ ] Cache transcriptions by file hash
+### 3.1 Obsidian Integration
 
-### Other platforms
-- [ ] Vimeo, Twitch VODs, Twitter/X spaces (via yt-dlp, which already supports many)
-- [ ] Conference talk archives (many use YouTube, but some don't)
+- [ ] `--frontmatter` flag: YAML frontmatter with title, channel, date, URL, duration, tags, reading time
+- [ ] Auto-generate tags from article content (ask LLM for 3-5 topic tags)
+- [ ] Embed thumbnail as markdown image
+- [ ] `--template` flag for custom Jinja-style output templates
+- [ ] Auto-name output files: `{Channel} - {Title}.md`
+- [ ] Skip already-generated files in output directory
+
+Example output:
+
+```markdown
+---
+title: "How Neural Networks Learn"
+channel: "3Blue1Brown"
+date: 2024-03-15
+url: https://youtube.com/watch?v=abc
+duration: 1245
+tags: [neural-networks, machine-learning, backpropagation]
+reading_time: 8 min
+---
+
+# How Neural Networks Learn
+
+Neural networks learn through backpropagation [4:32](...)...
+```
+
+### 3.2 Channel Feeds
+
+- [ ] `readtube feed channels.txt` — fetch latest videos from channels, skip already-processed
+- [ ] Track processed video IDs in a local state file
+- [ ] `channels.txt` format: one handle or URL per line, `#` comments
+
+```bash
+# channels.txt
+@3Blue1Brown
+@AndrejKarpathy
+@DwarkeshPatel
+
+# Daily cron
+0 8 * * * readtube feed ~/channels.txt -o ~/Obsidian/Videos/ --mode takeaways --frontmatter
+```
+
+### 3.3 Search
+
+- [ ] `readtube search "backpropagation"` — full-text search across generated articles
+- [ ] Index articles at generation time (SQLite FTS5, stored alongside cache)
+- [ ] Return: matching filename, relevant snippet, source video link
+- [ ] `--format json` for programmatic use
+
+### 3.4 Cross-Video Q&A
+
+- [ ] `readtube ask "What do Karpathy and 3B1B say differently about transformers?"`
+- [ ] Find relevant articles via search index
+- [ ] Stuff top-N relevant chunks into LLM context with source attribution
+- [ ] Output answer with citations: `[Source: "How GPT Works" by Karpathy, 12:30]`
+
+Effort: Medium-Hard. Search is straightforward. Q&A quality depends on
+retrieval quality.
+
+---
+
+## Phase 4 — E-Reader Pipeline
+
+**Why fourth:** E-readers are where long-form reading actually happens.
+EPUB generation exists but the workflow has friction.
+
+### 4.1 Send-to-Kindle
+
+- [ ] `readtube URL --kindle` — generate EPUB, email to Kindle address
+- [ ] `kindle_email` setting in config.toml
+- [ ] SMTP config in config.toml (or use system `sendmail`)
+- [ ] Batch: `readtube playlist URL --kindle` sends digest EPUB
+
+### 4.2 EPUB Polish
+
+- [ ] Test on real Kindle, Kobo, and Apple Books
+- [ ] Improve cover image embedding (hi-res thumbnails)
+- [ ] Better table of contents for multi-chapter articles
+- [ ] `--theme` support for EPUB (already works for HTML)
+- [ ] Custom CSS via config.toml
+
+### 4.3 Digest Mode
+
+- [ ] `readtube digest channels.txt -o weekly.epub` — combine multiple articles into one EPUB
+- [ ] Table of contents with all articles
+- [ ] One email to Kindle, one book with the week's reading
+
+---
+
+## Phase 5 — Distribution
+
+**Why fifth:** Build for yourself first, distribute when it's good.
+Premature distribution means supporting broken features.
+
+### 5.1 PyPI
+
+- [ ] Publish `pip install readtube`
+- [ ] Optional extras: `readtube[epub]`, `readtube[claude]`, `readtube[all]`
+- [ ] GitHub Actions: test on push, publish on tag
+- [ ] Proper README: install, quickstart, examples, config reference
+
+### 5.2 Homebrew
+
+- [ ] `brew install readtube`
+- [ ] Tap or core formula
+- [ ] Auto-update on release
+
+### 5.3 Nix
+
+- [ ] Update flake/shell.nix for new package structure
+- [ ] Cachix for pre-built binaries
+
+---
+
+## Phase 6 — Alternative Inputs
+
+**Why last:** YouTube covers 90% of the use case. Expand only after
+the core is excellent.
+
+### 6.1 Local Video/Audio Files
+
+- [ ] `readtube file.mp4` — transcribe with Whisper, then process normally
+- [ ] `readtube file.mp3` — audio-only, same pipeline
+- [ ] Whisper backend: local (whisper.cpp) or API (OpenAI Whisper)
+- [ ] Cache transcriptions by file content hash
+
+### 6.2 Podcasts
+
+- [ ] `readtube podcast <rss-url>` — fetch latest episode, transcribe, generate
+- [ ] Episode selection: `--latest`, `--episode N`, `--all`
+- [ ] Speaker diarization for interview podcasts (via pyannote or simple heuristics)
+
+### 6.3 Other Platforms
+
+yt-dlp already supports 1000+ sites. Many will work out of the box.
+
+- [ ] Test and document: Vimeo, Twitch VODs, Twitter/X spaces, Bilibili
+- [ ] Platform-specific metadata extraction where needed
+- [ ] Community-contributed platform support guides
 
 ---
 
 ## Non-Goals
 
-Things we deliberately won't build:
+Deliberate decisions about what readtube will never be:
 
-- **GUI / web app** — the CLI is the product. Read in Obsidian, Kindle, your browser.
-- **User accounts / cloud sync** — local-first. Your filesystem is your database.
-- **Real-time processing** — batch is fine. Videos don't change after upload.
-- **Social features** — no sharing, no comments, no feeds. Pipe output to whatever you want.
-- **Translation** — use dedicated tools. We generate, you translate.
-- **TTS** — use dedicated tools. We generate text, you feed it to your TTS of choice.
+- **GUI / web app.** The CLI is the product. Obsidian, Kindle, and your
+  browser are better reading apps than anything we'd build.
+- **User accounts / cloud.** Local-first. Your filesystem is your database.
+  No servers, no subscriptions, no data collection.
+- **Real-time / streaming video.** We process finished content.
+  Live transcription is a different problem.
+- **Social features.** No sharing, feeds, or recommendations.
+  Pipe the output to whatever you want.
+- **Translation.** Use DeepL, Google Translate, or your LLM of choice.
+  We produce the source text.
+- **TTS.** Use Eleven Labs, macOS `say`, or your preferred tool.
+  We produce text, you voice it.
+- **Competing with Notion/Readwise/etc.** We're a generator, not a reader.
+  We produce files that slot into YOUR existing workflow.
+
+---
+
+## Principles
+
+1. **Output quality over feature count.** One mode that produces excellent
+   articles beats five modes that produce mediocre ones.
+2. **Composable over integrated.** Pipe to grep, jq, Obsidian, Kindle,
+   email, whatever. Don't build what the ecosystem already has.
+3. **Local over cloud.** Ollama is the default. Cloud APIs are opt-in.
+   Nothing leaves your machine unless you choose a cloud LLM.
+4. **Fewer dependencies over more.** Core needs only yt-dlp and
+   youtube-transcript-api. Everything else is optional.
+5. **Transparent over magic.** Show what's happening. Cache hits,
+   backend selection, token counts, progress — all visible on stderr.
