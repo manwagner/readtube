@@ -1,209 +1,191 @@
 # Readtube
 
-Turn YouTube videos into beautifully typeset ebooks.
+Turn YouTube videos into articles you actually want to read.
 
-Readtube fetches transcripts from YouTube videos and transforms them into polished, magazine-style articles ready for your e-reader. No YouTube API key needed—just paste a URL.
+Readtube fetches transcripts from YouTube videos and transforms them into
+polished, well-structured articles using any LLM. Local-first, Unix-native,
+zero accounts required.
 
-## Installation
-
-**Homebrew (macOS/Linux):**
 ```bash
-brew tap unbalancedparentheses/readtube
-brew install readtube
+$ readtube "https://youtube.com/watch?v=VIDEO_ID"
+# The Art of Doing Science and Engineering
+
+Richard Hamming's legendary lecture series at the Naval Postgraduate School...
 ```
 
-**Nix:**
-```bash
-git clone https://github.com/unbalancedparentheses/readtube.git
-cd readtube && make shell
-```
+## Install
 
-**pipx:**
 ```bash
-pipx install git+https://github.com/unbalancedparentheses/readtube.git
-```
-
-**pip:**
-```bash
+# Minimal (Ollama + markdown output)
 pip install git+https://github.com/unbalancedparentheses/readtube.git
+
+# With EPUB support
+pip install "readtube[epub] @ git+https://github.com/unbalancedparentheses/readtube.git"
+
+# With Claude API
+pip install "readtube[claude] @ git+https://github.com/unbalancedparentheses/readtube.git"
+
+# Everything
+pip install "readtube[all] @ git+https://github.com/unbalancedparentheses/readtube.git"
 ```
 
-**One-liner:**
-```bash
-curl -sSL https://raw.githubusercontent.com/unbalancedparentheses/readtube/main/install.sh | bash
-```
+**Requirements:** Python 3.10+ and [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
-## Usage
-
-### With Claude Code (recommended)
-
-The easiest way to use Readtube is with Claude Code.
-
-**Setup (choose one):**
-```bash
-# Option 1: Add as a skill (easiest - run this in Claude Code)
-/add-skill https://raw.githubusercontent.com/unbalancedparentheses/readtube/main/SKILL.md
-
-# Option 2: Clone the repo
-git clone https://github.com/unbalancedparentheses/readtube.git
-cd readtube
-```
-
-**Then just ask:**
-```
-Create an ebook from https://www.youtube.com/watch?v=VIDEO_ID
-```
-
-Claude will:
-1. Fetch the video transcript
-2. Write a polished, magazine-style article
-3. Generate an EPUB with professional typography
-
-Also works with ChatGPT/Codex and other AI coding assistants.
-
-### Command Line
-
-Fetch transcripts to process yourself:
+## Quick Start
 
 ```bash
-# Fetch transcript and metadata
+# Article to terminal (streams in real time)
 readtube "https://youtube.com/watch?v=VIDEO_ID"
 
-# Fetch from a playlist
-readtube "https://youtube.com/playlist?list=ID" --max 10
+# Save as EPUB for your e-reader
+readtube "https://youtube.com/watch?v=VIDEO_ID" -o article.epub
 
-# Choose transcript language
-readtube "URL" --lang es
+# Quick summary
+readtube "https://youtube.com/watch?v=VIDEO_ID" --mode tldr
 
-# See available languages
-readtube "URL" --list-languages
+# Key takeaways
+readtube "https://youtube.com/watch?v=VIDEO_ID" --mode takeaways
 
-# Save as JSON for LLM processing
-readtube "URL" --output-json video.json
+# Just the transcript, no LLM needed
+readtube "https://youtube.com/watch?v=VIDEO_ID" --mode transcript
 ```
 
-### Local LLM Support
+## Output Modes
 
-Readtube supports multiple LLM backends for article generation when not using Claude Code:
-
-| Backend | Setup | Best For |
-|---------|-------|----------|
-| **llama-cpp** | `pip install llama-cpp-python` + download a `.gguf` model | Offline, privacy-focused |
-| **Ollama** | Install from [ollama.ai](https://ollama.ai), run `ollama serve` | Easy local setup |
-| **Claude API** | `pip install anthropic` + set `ANTHROPIC_API_KEY` | Best quality |
-| **OpenAI** | Set `OPENAI_API_KEY` | GPT models |
-
-**Auto-detection:** When running inside Claude Code or ChatGPT/Codex, Readtube automatically uses the host AI. Otherwise, it falls back to local LLMs in this order: llama-cpp → Ollama → Claude API → OpenAI.
-
-**Environment variables:**
-```
-LLM_MAX_TOKENS=2048
-LLM_TEMPERATURE=0.7
-LLAMA_MODEL_PATH=/path/to/model.gguf
-LLAMA_CTX=4096
-LLAMA_GPU_LAYERS=-1
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
-ANTHROPIC_API_KEY=...
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
-OPENAI_API_KEY=...
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4o
-```
-
-**Generate articles with local LLMs:**
-```bash
-# First, fetch the transcript
-readtube "URL" --output-json video.json
-
-# Generate with llama.cpp
-python write_article.py video.json --backend llama-cpp --model /path/to/model.gguf --n-ctx 4096 --n-gpu-layers -1 --max-tokens 1600 --temperature 0.7
-
-# Generate with Ollama
-python write_article.py video.json --backend ollama --model llama3.2 --base-url http://localhost:11434
-
-# Generate with Claude API
-python write_article.py video.json --backend claude-api --model claude-sonnet-4-20250514
-
-# Generate with OpenAI-compatible API (LM Studio / vLLM / OpenAI)
-python write_article.py video.json --backend openai --model gpt-4o --base-url https://api.openai.com/v1
-
-# Just create a prompt file (to paste into any LLM)
-python write_article.py video.json --prompt-only
-```
-
-**Check available backends:**
-```bash
-python llm.py --list-backends
-```
-
-### Python API
-
-```python
-from create_epub import create_ebook
-
-articles = [{
-    "title": "How to Build a Startup",
-    "channel": "Y Combinator",
-    "url": "https://youtube.com/watch?v=...",
-    "thumbnail": "https://i.ytimg.com/...",
-    "article": "# Your markdown article here..."
-}]
-
-create_ebook(articles, format="epub")  # or pdf, html, mobi, azw3
-```
-
-## Why Readtube?
-
-- **Read instead of watch**: Convert long-form videos into articles you can read anywhere
-- **Better retention**: Reading lets you highlight, annotate, and revisit key ideas
-- **Offline access**: EPUBs work on any e-reader without internet
-- **Professional typography**: Clean, readable formatting based on Practical Typography principles
+| Mode | What you get |
+|------|-------------|
+| `article` | Full magazine-style article with headings and sections (default) |
+| `tldr` | 3-5 bullet points capturing the key ideas |
+| `takeaways` | Structured list grouped by topic with specific claims and data |
+| `transcript` | Cleaned transcript — no LLM required |
 
 ## Output Formats
 
-- **EPUB** — For Kindle, Kobo, Apple Books, and other e-readers
-- **PDF** — For printing or reading on tablets
-- **HTML** — For web publishing
-- **MOBI/AZW3** — Direct Kindle formats (requires Calibre)
+| Format | Command | Notes |
+|--------|---------|-------|
+| Markdown | `readtube URL` | Default, streams to stdout |
+| Markdown file | `readtube URL -o article.md` | |
+| EPUB | `readtube URL -o article.epub` | Requires `readtube[epub]` |
+| PDF | `readtube URL -o article.pdf` | Requires `readtube[pdf]` |
+| HTML | `readtube URL -o article.html` | Standalone with embedded CSS |
 
-## Batch Processing
+## LLM Backends
 
-Process multiple videos from a config file:
+Readtube supports three backends. It auto-detects which one to use:
 
-```yaml
-# batch.yaml
-output_dir: ./ebooks
-default_format: epub
+| Backend | Setup | Best for |
+|---------|-------|----------|
+| **Ollama** | [Install Ollama](https://ollama.ai), run `ollama serve` | Free, private, local |
+| **Claude** | Set `ANTHROPIC_API_KEY` | Best quality |
+| **OpenAI** | Set `OPENAI_API_KEY` | GPT models |
 
-jobs:
-  - url: https://youtube.com/watch?v=VIDEO1
-  - url: https://youtube.com/watch?v=VIDEO2
-    output_format: pdf
-```
+**Auto-detection order:** Ollama running locally → `ANTHROPIC_API_KEY` set → `OPENAI_API_KEY` set.
+
+Override with flags:
 
 ```bash
-python batch.py batch.yaml
+readtube URL --backend claude --model claude-sonnet-4-20250514
+readtube URL --backend ollama --model llama3.2
+readtube URL --backend openai --model gpt-4o
 ```
 
-## Additional Features
+## Features
 
-- **Themes**: `default`, `dark`, `modern`, `minimal`
-- **Translation**: Google Translate, DeepL, LibreTranslate
-- **Text-to-Speech**: Generate audio versions
-- **RSS Feeds**: Podcast-style feeds from articles
-- **Image Extraction**: Thumbnails and frames
-- **Readwise Integration**: Sync to Readwise
-- **Scheduled Fetching**: Cron/systemd/launchd support
+### Timestamps
 
-## Typography
+Link every key point back to the exact moment in the video:
 
-Ebooks follow [Practical Typography](https://practicaltypography.com/) principles:
+```bash
+readtube URL --timestamps
+```
 
-- 65 character line length
-- 1.4 line height
-- Charter and Georgia fonts
-- First-line paragraph indents
+Produces:
+
+```markdown
+Neural networks learn through backpropagation [4:32](https://youtube.com/watch?v=xxx&t=272),
+adjusting weights layer by layer...
+```
+
+### Chapter-Aware Articles
+
+When a video has chapters, readtube uses them as article sections:
+
+```bash
+readtube URL --chapters
+```
+
+### Playlists
+
+```bash
+readtube playlist "https://youtube.com/playlist?list=PLxxx" -o ./articles/
+readtube playlist "https://youtube.com/playlist?list=PLxxx" --max 10
+```
+
+### Batch Processing
+
+```bash
+# urls.txt: one URL per line, # comments, blank lines ignored
+readtube batch urls.txt -o ./articles/
+```
+
+### Transcript Mode (No LLM)
+
+Fetch and clean transcripts without any LLM:
+
+```bash
+readtube URL --mode transcript              # to stdout
+readtube URL --mode transcript | wc -w      # word count
+readtube URL --mode transcript | llm "summarize this"  # pipe to another tool
+```
+
+## Configuration
+
+```bash
+readtube config --init   # create default config
+readtube config          # show current config
+```
+
+Config lives at `~/.config/readtube/config.toml`:
+
+```toml
+[llm]
+backend = "ollama"           # ollama | claude | openai
+model = "llama3.2"
+# api_key_env = "ANTHROPIC_API_KEY"  # env var name, never the key itself
+
+[output]
+default_format = "md"        # md | epub | pdf | html
+default_mode = "article"     # article | tldr | takeaways | transcript
+timestamps = false
+chapters = true
+
+[cache]
+dir = "~/.cache/readtube"
+ttl_days = 30
+```
+
+**Precedence:** CLI flags > env vars > config file > auto-detect.
+
+## Unix Pipeline Friendly
+
+- **stdout** = content (article text)
+- **stderr** = progress (fetching, generating, etc.)
+- **Exit codes**: 0 success, 1 general, 2 bad args, 3 video not found, 4 no transcript, 5 LLM error, 6 output format error
+
+```bash
+readtube URL | head -20                     # first 20 lines
+readtube URL > article.md 2>/dev/null       # suppress progress
+readtube URL --mode transcript | grep -i "neural"  # search transcript
+```
+
+## Cache
+
+Transcripts are cached locally to avoid re-fetching:
+
+```bash
+readtube cache stats    # show cache size
+readtube cache clear    # wipe cache
+```
 
 ## PDF Support
 
@@ -223,15 +205,14 @@ pip install "readtube[pdf] @ git+https://github.com/unbalancedparentheses/readtu
 ## Development
 
 ```bash
-make test      # Run tests
-make test-cov  # Tests with coverage
-make lint      # Run linter
+git clone https://github.com/unbalancedparentheses/readtube.git
+cd readtube
+pip install -e ".[all]"
+pytest
 ```
+
+87 tests. 13 source files. 2 core dependencies.
 
 ## License
 
 MIT
-
----
-
-Typography principles from [Practical Typography](https://practicaltypography.com/) by Matthew Butterick.
