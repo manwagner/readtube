@@ -59,11 +59,12 @@ class TestLengthScaling:
         assert "1,000-2,000" in instructions
 
     def test_long_article(self):
-        instructions = _length_instructions(15000, "article")
+        instructions = _length_instructions(10000, "article")
         assert "2,500-4,000" in instructions
 
     def test_very_long_article(self):
-        instructions = _length_instructions(40000, "article")
+        # 14K+ words (~90+ min) should get the longest tier
+        instructions = _length_instructions(16000, "article")
         assert "4,000-6,000" in instructions
 
     def test_short_takeaways(self):
@@ -71,11 +72,11 @@ class TestLengthScaling:
         assert "5-10" in instructions
 
     def test_long_takeaways(self):
-        instructions = _length_instructions(15000, "takeaways")
+        instructions = _length_instructions(10000, "takeaways")
         assert "20-30" in instructions
 
     def test_very_long_takeaways(self):
-        instructions = _length_instructions(40000, "takeaways")
+        instructions = _length_instructions(16000, "takeaways")
         assert "30-40" in instructions
 
     def test_no_instructions_for_unknown_mode(self):
@@ -91,7 +92,7 @@ class TestBulletRange:
         assert _bullet_range(5000) == "5-8"
 
     def test_long_video(self):
-        assert _bullet_range(15000) == "8-12"
+        assert _bullet_range(10000) == "8-12"
 
     def test_very_long_video(self):
         assert _bullet_range(40000) == "12-15"
@@ -105,25 +106,25 @@ class TestLengthInPrompts:
         assert "1,000-2,000" in user
 
     def test_long_article_includes_length(self):
-        # ~16000 words (like the Ezra Klein video)
+        # ~16000 words (like the Ezra Klein video, ~90+ min)
         transcript = "word " * 16000
         _, user = get_prompt("article", transcript, "Title", "Channel")
-        assert "2,500-4,000" in user
+        assert "4,000-6,000" in user
 
     def test_tldr_scales_bullets(self):
         # Short
         _, user = get_prompt("tldr", "short text", "Title", "Channel")
         assert "3-5" in user
 
-        # Long (~16000 words)
+        # Long (~16000 words, 90+ min)
         long_transcript = "word " * 16000
         _, user = get_prompt("tldr", long_transcript, "Title", "Channel")
-        assert "8-12" in user
+        assert "12-15" in user
 
     def test_takeaways_scales(self):
         long_transcript = "word " * 16000
         _, user = get_prompt("takeaways", long_transcript, "Title", "Channel")
-        assert "20-30" in user
+        assert "30-40" in user
 
     def test_chaptered_article_includes_length(self):
         transcript = "word " * 16000
@@ -131,4 +132,4 @@ class TestLengthInPrompts:
             "article", transcript, "Title", "Channel",
             has_chapter_structure=True,
         )
-        assert "2,500-4,000" in user
+        assert "4,000-6,000" in user

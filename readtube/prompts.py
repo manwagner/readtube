@@ -65,9 +65,9 @@ def _length_instructions(word_count: int, mode: str) -> str:
     if mode == "article":
         if word_count < 3000:
             target = "500-800"
-        elif word_count < 10000:
+        elif word_count < 8000:
             target = "1,000-2,000"
-        elif word_count < 30000:
+        elif word_count < 14000:
             target = "2,500-4,000"
         else:
             target = "4,000-6,000"
@@ -80,9 +80,9 @@ def _length_instructions(word_count: int, mode: str) -> str:
     elif mode == "takeaways":
         if word_count < 3000:
             return "\nExtract 5-10 key takeaways."
-        elif word_count < 10000:
+        elif word_count < 8000:
             return "\nExtract 10-20 key takeaways, grouped under 3-5 topic headers."
-        elif word_count < 30000:
+        elif word_count < 14000:
             return "\nExtract 20-30 key takeaways, grouped under 5-8 topic headers. Be thorough."
         else:
             return "\nExtract 30-40 key takeaways, grouped under 8-12 topic headers. Be comprehensive — this is a long video with many important points."
@@ -93,9 +93,9 @@ def _bullet_range(word_count: int) -> str:
     """Determine bullet point range for tldr mode based on transcript length."""
     if word_count < 3000:
         return "3-5"
-    elif word_count < 10000:
+    elif word_count < 8000:
         return "5-8"
-    elif word_count < 30000:
+    elif word_count < 14000:
         return "8-12"
     else:
         return "12-15"
