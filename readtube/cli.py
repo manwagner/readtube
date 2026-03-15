@@ -39,6 +39,12 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--backend", choices=["ollama", "claude", "openai"], help="LLM backend")
     parser.add_argument("--model", help="model name")
     parser.add_argument("--theme", default="default", help="theme for HTML/EPUB output")
+    parser.add_argument("--prompt", help="custom prompt (replaces mode)")
+    parser.add_argument("--prompt-file", help="path to custom prompt file")
+    parser.add_argument("--raw", action="store_true", help="skip transcript cleaning")
+    parser.add_argument("--no-sponsorblock", action="store_true", help="disable SponsorBlock filtering")
+    parser.add_argument("--genre", choices=["interview", "tutorial", "lecture", "documentary", "debate", "conference"], help="override genre detection")
+    parser.add_argument("--list-genres", action="store_true", help="show available genres")
     parser.add_argument("-v", "--verbose", action="store_true", help="show progress even when piping")
     parser.add_argument("-q", "--quiet", action="store_true", help="suppress all progress")
 
@@ -119,6 +125,11 @@ def main(argv: Optional[list[str]] = None) -> None:
         else:
             # Treat as a URL (single video mode)
             args = _build_single_parser().parse_args(args_list)
+            if getattr(args, "list_genres", False):
+                from .genre import list_genres
+                for g in list_genres():
+                    print(g)
+                return
             verbose = _should_show_progress(args)
             _cmd_single(args, verbose)
 
@@ -139,10 +150,21 @@ def _should_show_progress(args) -> bool:
     return sys.stderr.isatty()
 
 
+def _resolve_custom_prompt(args) -> Optional[str]:
+    """Read custom prompt from --prompt or --prompt-file."""
+    if getattr(args, "prompt", None):
+        return args.prompt
+    if getattr(args, "prompt_file", None):
+        from pathlib import Path
+        return Path(args.prompt_file).read_text().strip()
+    return None
+
+
 def _cmd_single(args, verbose: bool) -> None:
     from .pipeline import process_single
 
     config = Config.load()
+    custom_prompt = _resolve_custom_prompt(args)
     result = process_single(
         url=args.url,
         config=config,
@@ -156,6 +178,10 @@ def _cmd_single(args, verbose: bool) -> None:
         cli_model=args.model,
         verbose=verbose,
         theme=args.theme,
+        custom_prompt=custom_prompt,
+        raw=args.raw,
+        no_sponsorblock=args.no_sponsorblock,
+        genre=args.genre,
     )
 
     # Print to stdout if no output file
@@ -173,6 +199,7 @@ def _cmd_playlist(args, verbose: bool) -> None:
     output_dir = args.output or "."
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
+    custom_prompt = _resolve_custom_prompt(args)
     results = process_playlist(
         url=args.url,
         config=config,
@@ -187,6 +214,10 @@ def _cmd_playlist(args, verbose: bool) -> None:
         cli_model=args.model,
         verbose=verbose,
         theme=args.theme,
+        custom_prompt=custom_prompt,
+        raw=args.raw,
+        no_sponsorblock=args.no_sponsorblock,
+        genre=args.genre,
     )
 
     progress(f"\nprocessed {len(results)} videos", verbose)
@@ -200,6 +231,7 @@ def _cmd_batch(args, verbose: bool) -> None:
     output_dir = args.output or "."
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
+    custom_prompt = _resolve_custom_prompt(args)
     results = process_batch(
         urls_file=args.file,
         config=config,
@@ -213,6 +245,10 @@ def _cmd_batch(args, verbose: bool) -> None:
         cli_model=args.model,
         verbose=verbose,
         theme=args.theme,
+        custom_prompt=custom_prompt,
+        raw=args.raw,
+        no_sponsorblock=args.no_sponsorblock,
+        genre=args.genre,
     )
 
     progress(f"\nprocessed {len(results)} URLs", verbose)

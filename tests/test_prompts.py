@@ -1,6 +1,6 @@
 """Tests for prompts module."""
 
-from readtube.prompts import get_prompt, SYSTEM_PROMPT, _length_instructions, _bullet_range
+from readtube.prompts import get_prompt, build_custom_prompt, SYSTEM_PROMPT, CUSTOM_SYSTEM_PROMPT, _length_instructions, _bullet_range
 
 
 class TestGetPrompt:
@@ -133,3 +133,36 @@ class TestLengthInPrompts:
             has_chapter_structure=True,
         )
         assert "4,000-6,000" in user
+
+
+class TestBuildCustomPrompt:
+    def test_includes_user_prompt(self):
+        system, user = build_custom_prompt(
+            "Summarize in French", "some transcript", "My Title", "My Channel",
+        )
+        assert "Summarize in French" in user
+
+    def test_includes_title_and_channel(self):
+        system, user = build_custom_prompt(
+            "Do something", "transcript text", "Video Title", "Channel Name",
+        )
+        assert "Title: Video Title" in user
+        assert "Channel: Channel Name" in user
+
+    def test_includes_transcript(self):
+        system, user = build_custom_prompt(
+            "Analyze", "the full transcript content here", "T", "C",
+        )
+        assert "the full transcript content here" in user
+
+    def test_system_prompt(self):
+        system, user = build_custom_prompt("Do it", "transcript", "T", "C")
+        assert system == CUSTOM_SYSTEM_PROMPT
+
+    def test_transcript_truncation(self):
+        long_transcript = "x" * 100000
+        _, user = build_custom_prompt("Summarize", long_transcript, "T", "C")
+        # Transcript portion should be truncated to 50000 chars
+        assert long_transcript not in user
+        assert "x" * 50000 in user
+        assert "x" * 50001 not in user

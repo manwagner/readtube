@@ -14,12 +14,15 @@ from .chapters import (
     format_chapters_for_prompt,
     split_transcript_by_chapters,
 )
+from .clean import clean_transcript
 from .config import Config, progress, resolve_llm_config
 from .errors import ReadtubeError
+from .genre import detect_genre, get_genre_system_prompt
 from .llm import get_backend
-from .prompts import get_prompt
+from .prompts import build_custom_prompt, get_prompt
 from .render import render_output
-from .transcript import get_transcript
+from .sponsorblock import remove_sponsors
+from .transcript import get_transcript, get_transcript_segments
 from .video import VideoInfo, get_playlist_videos, get_video_info, is_playlist_url
 
 
@@ -36,6 +39,10 @@ def process_single(
     cli_model: Optional[str] = None,
     verbose: bool = True,
     theme: str = "default",
+    custom_prompt: Optional[str] = None,
+    raw: bool = False,
+    no_sponsorblock: bool = False,
+    genre: Optional[str] = None,
 ) -> str:
     """Process a single video URL. Returns the rendered content."""
 
@@ -87,6 +94,25 @@ def process_single(
     word_count = len(transcript.split())
     progress(f"  {word_count} words", verbose)
 
+    # 3b. SponsorBlock filtering
+    if not no_sponsorblock:
+        try:
+            timed_segments = get_transcript_segments(video["video_id"], lang=lang)
+            filtered = remove_sponsors(video["video_id"], transcript, timed_segments)
+            if filtered != transcript:
+                removed_words = len(transcript.split()) - len(filtered.split())
+                progress(f"  sponsorblock: removed ~{removed_words} words", verbose)
+                transcript = filtered
+        except Exception:
+            pass  # graceful fallback
+
+    # 3c. Transcript cleaning
+    if not raw:
+        transcript = clean_transcript(transcript)
+        cleaned_count = len(transcript.split())
+        if cleaned_count < word_count:
+            progress(f"  cleaned: {word_count} → {cleaned_count} words", verbose)
+
     # 4. Chapter splitting
     chapters = video.get("chapters", [])
     chapters_text = ""
@@ -101,16 +127,35 @@ def process_single(
     elif chapters:
         chapters_text = format_chapters_for_prompt(chapters)
 
-    # 5. Build prompt
-    system_prompt, user_prompt = get_prompt(
-        mode=mode,
-        transcript=transcript,
-        title=video["title"],
-        channel=video["channel"],
-        chapters_text=chapters_text,
-        has_chapter_structure=has_chapter_structure,
-        timestamps=timestamps,
+    # 4b. Genre detection
+    detected_genre = genre or detect_genre(
+        video["title"], video["channel"], video.get("description", ""),
     )
+    progress(f"  genre: {detected_genre}", verbose)
+
+    # 5. Build prompt
+    if custom_prompt:
+        system_prompt, user_prompt = build_custom_prompt(
+            prompt=custom_prompt,
+            transcript=transcript,
+            title=video["title"],
+            channel=video["channel"],
+        )
+    else:
+        system_prompt, user_prompt = get_prompt(
+            mode=mode,
+            transcript=transcript,
+            title=video["title"],
+            channel=video["channel"],
+            chapters_text=chapters_text,
+            has_chapter_structure=has_chapter_structure,
+            timestamps=timestamps,
+        )
+        # Override system prompt with genre-specific one
+        try:
+            system_prompt = get_genre_system_prompt(detected_genre)
+        except KeyError:
+            pass  # keep default system prompt
 
     # 6. Resolve LLM backend
     backend_name, model_name, api_key = resolve_llm_config(config, cli_backend, cli_model)

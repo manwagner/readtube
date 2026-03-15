@@ -101,6 +101,25 @@ def _bullet_range(word_count: int) -> str:
         return "12-15"
 
 
+CUSTOM_SYSTEM_PROMPT = "You are a helpful assistant that processes video transcripts according to user instructions."
+
+
+def build_custom_prompt(prompt: str, transcript: str, title: str, channel: str) -> tuple[str, str]:
+    """Build a prompt from a user-supplied custom prompt string.
+
+    Returns:
+        (system_prompt, user_prompt) tuple.
+    """
+    user_prompt = f"""{prompt}
+
+Title: {title}
+Channel: {channel}
+
+Transcript:
+{transcript[:50000]}"""
+    return CUSTOM_SYSTEM_PROMPT, user_prompt
+
+
 def get_prompt(
     mode: str,
     transcript: str,
