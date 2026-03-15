@@ -99,7 +99,29 @@ accuracy, readability, and structure.
 - [ ] Write tests for genre detection heuristics
 - [ ] Test each prompt template against 3+ real videos of that genre
 
-### 1.5 Custom Prompts
+### 1.5 Description & Metadata Enrichment
+
+Video descriptions contain links, timestamps, context, and corrections
+that never appear in the transcript. This is free data we're ignoring.
+
+- [ ] Parse video description for timestamped sections
+- [ ] Extract links from description and include as references in article
+- [ ] Extract corrections/errata from description ("correction at 12:30...")
+- [ ] Include description context in LLM prompt (channel bio, video summary, links)
+- [ ] Parse pinned comment for additional context (many creators pin corrections/links)
+- [ ] Merge description timestamps with chapter data when chapters are missing
+- [ ] Write tests for description parsing
+
+### 1.6 Multi-Language Transcript Support
+
+- [ ] Auto-detect best available transcript language when `--lang` not specified
+- [ ] Prefer manual captions over auto-generated when both exist
+- [ ] List available languages: `readtube URL --list-languages`
+- [ ] Handle videos with multiple language tracks gracefully
+- [ ] Inform user on stderr which language/type was selected
+- [ ] Write tests for language selection logic
+
+### 1.7 Custom Prompts
 
 - [ ] Add `--prompt "..."` CLI flag
 - [ ] Inject transcript, title, channel into custom prompt automatically
@@ -109,7 +131,7 @@ accuracy, readability, and structure.
 - [ ] Document custom prompt syntax in README
 - [ ] Write tests for custom prompt flag handling
 
-### 1.6 Prompt Evaluation Framework
+### 1.8 Prompt Evaluation Framework
 
 - [ ] Curate test video list: 8-10 per genre, 50+ total, ranging 5 min to 2+ hours
 - [ ] Store test video list as JSON/TOML in repo
@@ -226,6 +248,18 @@ highest-value but produce worst output due to context window overflow.
 - [ ] Build `readtube usage` subcommand: show tokens/cost by backend and time period
 - [ ] Update pricing data with each readtube release
 - [ ] Write tests for cost estimation logic
+
+### 3.5 Pre-Summarization for Cost Savings
+
+For very long videos on paid APIs, summarize chunks locally (Ollama)
+before sending to a cloud model for the final synthesis.
+
+- [ ] Detect when local model is available alongside paid API
+- [ ] Pre-summarize transcript chunks with local model to reduce token count
+- [ ] Send condensed summaries to paid API for final article generation
+- [ ] Add `--pre-summarize` CLI flag (auto when local + cloud both configured)
+- [ ] Show cost comparison on stderr: "pre-summarized: ~$0.08 vs full: ~$0.45"
+- [ ] Write tests for pre-summarization pipeline
 
 ---
 
@@ -373,6 +407,34 @@ requiring manual intervention.
 - [ ] Batch summary report: N processed, N failed, N skipped, total tokens, total cost
 - [ ] Write tests for progress output formatting
 
+### 6.5 Config Profiles
+
+- [ ] Add `[profiles]` section to config.toml
+- [ ] `readtube --profile kindle` loads preset (epub + dark theme + chapters)
+- [ ] `readtube --profile obsidian` loads preset (md + frontmatter + timestamps)
+- [ ] `readtube --profile quick` loads preset (tldr + no chapters)
+- [ ] Users can define custom profiles in config.toml
+- [ ] Profile settings merge with (and override) defaults
+- [ ] Write tests for profile loading and merging
+
+### 6.6 Shell Completions
+
+- [ ] Generate Bash completions (flags, modes, backends, genres)
+- [ ] Generate Zsh completions
+- [ ] Generate Fish completions
+- [ ] `readtube --completions bash|zsh|fish` outputs completion script
+- [ ] Document installation in README
+
+### 6.7 Pipeline Hooks
+
+- [ ] Add `[hooks]` section to config.toml
+- [ ] `post_transcript` hook: run shell command after transcript fetch
+- [ ] `post_article` hook: run shell command after article generation
+- [ ] `post_render` hook: run shell command after file output
+- [ ] Pass video metadata and output path as environment variables to hooks
+- [ ] Example: `post_render = "cp {output} ~/Obsidian/Videos/"`
+- [ ] Write tests for hook execution
+
 ---
 
 ## Phase 7 — E-Reader Pipeline
@@ -402,7 +464,16 @@ exists but the workflow has friction.
 - [ ] Embed extracted screenshots in EPUB (from Phase 2)
 - [ ] Fix any rendering issues found in device testing
 
-### 7.3 Digest Mode
+### 7.3 Accessibility
+
+- [ ] Auto-generate alt text for all embedded images and screenshots
+- [ ] Ensure EPUB passes epubcheck accessibility validation
+- [ ] Proper heading hierarchy in all output formats (h1 → h2 → h3, no skips)
+- [ ] Semantic HTML in HTML output (article, section, figure, figcaption)
+- [ ] Screen reader friendly timestamp links (aria-label with full description)
+- [ ] Write tests for heading hierarchy and HTML semantics
+
+### 7.4 Digest Mode
 
 - [ ] Build `readtube digest` subcommand
 - [ ] Accept channels.txt or list of URLs
