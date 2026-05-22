@@ -9,6 +9,13 @@ from typing import Optional
 from .config import Config, init_config, print_config, progress
 from .errors import ReadtubeError, EXIT_INVALID_ARGS, die
 
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
 SUBCOMMANDS = {"playlist", "batch", "config", "cache"}
 
 EPILOG = """\

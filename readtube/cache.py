@@ -23,7 +23,7 @@ class Cache:
         if not path.exists():
             return False
         try:
-            data = json.loads(path.read_text())
+            data = json.loads(path.read_text(encoding="utf-8"))
             cached_at = data.get("cached_at", 0)
             return (time.time() - cached_at) < self.ttl_seconds
         except Exception:
@@ -33,7 +33,7 @@ class Cache:
         if not self._is_valid(path):
             return None
         try:
-            data = json.loads(path.read_text())
+            data = json.loads(path.read_text(encoding="utf-8"))
             return data.get("value")
         except Exception:
             return None
@@ -41,7 +41,7 @@ class Cache:
     def _write(self, path: Path, value: Any) -> None:
         self._ensure_dirs()
         data = {"value": value, "cached_at": time.time()}
-        path.write_text(json.dumps(data, ensure_ascii=False))
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
     def get_transcript(self, video_id: str, lang: Optional[str] = None) -> Optional[str]:
         key = f"{video_id}_{lang or 'auto'}"
